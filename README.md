@@ -1,7 +1,8 @@
-TehConnection-MacGuffin
-=======================
+MacGuffin
+=========
 
-MacGuffin - Auto Upload Bot for TehConnection
+Automated tools for handling Scene and P2P film releases -- gather and verify metadata, take
+screenshots and upload them to an image host, create a .torrent file and upload it to a bittorrent tracker.
 
 
 Requirements
