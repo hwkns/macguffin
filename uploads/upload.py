@@ -129,7 +129,7 @@ class Upload(object):
             # Put torrent file in home dir
             self.torrent.move_to(os.path.expanduser('~'))
 
-    def get_imdb_id(self):
+    def get_imdb_id_from_nfo(self):
 
         # Try to get IMDb ID from the NFO
         if self.use_nfo and self.nfo is not None:
@@ -138,102 +138,110 @@ class Upload(object):
             for line in StringIO(self.nfo.text):
                 if 'imdb.com/title/tt' in line:
                     imdb_id = metadata.IMDb.get_valid_id(line)
-                    msg = 'Found IMDb ID in NFO: {id}'
-                    logging.debug(msg.format(id=imdb_id))
 
             if imdb_id is not None:
-                self.imdb = metadata.IMDb(imdb_id)
-                try:
-                    self.tmdb = metadata.TMDB(imdb_id=self.imdb.id)
-                    self.tmdb.get_metadata()
-                except metadata.TMDBError as e:
-                    raise UploadInterruptedError(e)
+                msg = 'Found IMDb ID in NFO: {id}'
+                logging.debug(msg.format(id=imdb_id))
+                return imdb_id
             else:
                 logging.warning('Could not find IMDb ID in NFO!')
-                self.imdb = None
+                return None
 
+    def get_imdb_id(self):
+
+        imdb_id = self.get_imdb_id_from_nfo()
+
+        if imdb_id is not None:
+            self.imdb = metadata.IMDb(imdb_id)
+            return
+
+        logging.debug('Searching IMDb, TMDb, and Google.')
+
+        # Search using TMDb API
+        try:
+            tmdb = metadata.TMDB(title=self.release.title, year=self.release.year)
+            tmdb.get_metadata()
+            tmdb_search = metadata.IMDb(tmdb.imdb_id)
+        except (metadata.TMDBError, metadata.IMDbError):
+            logging.debug('TMDb search failed to produce an IMDb link.')
+            tmdb_search = None
+
+        if self.release.year is not None:
+            query = '{title} ({year})'.format(title=self.release.title, year=self.release.year)
         else:
+            query = self.release.title
 
-            logging.debug('Searching IMDb, TMDb, and Google.')
+        # Search using IMDb web site
+        params = {
 
-            # Search using TMDb API
+            # Title, and year if we have it
+            'q': query,
+
+            # Search by title
+            's': 'tt',
+
+            # Search for films
+            'ttype': 'ft'
+
+        }
+        url = 'http://www.imdb.com/find'
+        response = requests.get(url, params=params)
+        response.raise_for_status()
+        dom = BeautifulSoup(response.text, 'lxml')
+        first_result = dom.find('tr', attrs={'class': 'findResult'})
+        if first_result is not None:
+            imdb_link = first_result.a.get('href').strip()
             try:
-                tmdb = metadata.TMDB(title=self.release.title, year=self.release.year)
-                tmdb.get_metadata()
-            except metadata.TMDBError as e:
-                raise UploadInterruptedError(e)
-            try:
-                tmdb_search = metadata.IMDb(tmdb.imdb_id)
+                imdb_search = metadata.IMDb(imdb_link)
             except metadata.IMDbError:
-                tmdb_search = None
-
-            if self.release.year is not None:
-                query = '{title} ({year})'.format(title=self.release.title, year=self.release.year)
-            else:
-                query = self.release.title
-
-            # Search using IMDb web site
-            params = {
-
-                # Title, and year if we have it
-                'q': query,
-
-                # Search by title
-                's': 'tt',
-
-                # Search for films
-                'ttype': 'ft'
-
-            }
-            url = 'http://www.imdb.com/find'
-            response = requests.get(url, params=params)
-            response.raise_for_status()
-            dom = BeautifulSoup(response.text, 'lxml')
-            first_result = dom.find('tr', attrs={'class': 'findResult'})
-            if first_result is not None:
-                imdb_link = first_result.a.get('href').strip()
-                try:
-                    imdb_search = metadata.IMDb(imdb_link)
-                except metadata.IMDbError:
-                    imdb_search = None
-            else:
+                logging.debug('IMDb search failed to produce an IMDb link.')
                 imdb_search = None
+        else:
+            imdb_search = None
 
-            # Search using Google
-            query += ' IMDb'
-            params = {
+        # Search using Google
+        query += ' IMDb'
+        params = {
 
-                # Title, and year if we have it
-                'q': query,
+            # Title, and year if we have it
+            'q': query,
 
-                # We're feeling lucky.  ;)
-                'btnI': ''
+            # We're feeling lucky.  ;)
+            'btnI': ''
 
-            }
-            url = 'http://www.google.com/search'
-            response = requests.get(url, params=params)
-            response.raise_for_status()
+        }
+        url = 'http://www.google.com/search'
+        response = requests.get(url, params=params)
+        response.raise_for_status()
 
-            try:
-                google_search = metadata.IMDb(response.url)
-            except metadata.IMDbError:
-                google_search = None
+        try:
+            google_search = metadata.IMDb(response.url)
+        except metadata.IMDbError:
+            logging.debug('Google search failed to produce an IMDb link.')
+            google_search = None
 
-            if imdb_search == google_search or imdb_search == tmdb_search:
-                self.imdb = imdb_search
-            elif google_search == tmdb_search:
-                self.imdb = tmdb_search
-            else:
-                raise UploadInterruptedError('Google, IMDb, and TMDb searches all produced different IMDb IDs.')
+        if (imdb_search, google_search, tmdb_search).count(None) > 1:
+            raise UploadInterruptedError('More than one search failed.')
 
-            self.tmdb = tmdb
+        if imdb_search == google_search or imdb_search == tmdb_search:
+            self.imdb = imdb_search
+        elif google_search == tmdb_search:
+            self.imdb = tmdb_search
+        else:
+            raise UploadInterruptedError('Google, IMDb, and TMDb searches all produced different IMDb IDs.')
 
     def get_metadata(self):
 
         self.get_imdb_id()
 
-        # Get IMDb data
-        self.imdb.get_metadata()
+        # Get IMDb and TMDB data
+        assert self.imdb is not None
+        try:
+            self.imdb.get_metadata()
+            self.tmdb = metadata.TMDB(imdb_id=self.imdb.id)
+            self.tmdb.get_metadata()
+        except (metadata.IMDbError, metadata.TMDBError) as e:
+            raise UploadInterruptedError(e)
 
         # Make sure we have a title
         titles = [
