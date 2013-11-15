@@ -98,7 +98,8 @@ class BaseTracker(object):
                 verify=verify,
                 allow_redirects=allow_redirects,
             )
-        except requests.ConnectionError as e:
+            response.raise_for_status()
+        except requests.RequestException as e:
             msg = 'Could not connect to {site}: {error}'
             raise TrackerError(msg.format(site=self, error=e))
         return response
