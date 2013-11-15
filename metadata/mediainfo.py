@@ -35,7 +35,7 @@ class Mediainfo(object):
 
                 # First, cd to the base path; then we'll run mediainfo using the relative path
                 command = 'cd "{dir}"; '.format(dir=base_path)
-                relative_path = path.replace(base_path, '').lstrip('/')
+                relative_path = path.replace(base_path, '').lstrip(os.sep)
 
             else:
                 command = ''

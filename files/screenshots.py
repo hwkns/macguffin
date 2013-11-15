@@ -1,5 +1,6 @@
 from __future__ import print_function, unicode_literals, division, absolute_import
 import subprocess
+import tempfile
 import logging
 import os
 
@@ -96,7 +97,9 @@ class Screenshots(object):
                 command += ' -ss {seconds}'.format(seconds=time_code)
 
             # Set output path
-            path = '/tmp/{unique_string}_{time_code}.png'.format(unique_string=unique_string, time_code=time_code)
+            output_file = '{unique_string}_{time_code}.png'.format(unique_string=unique_string, time_code=time_code)
+            tmp = tempfile.gettempdir()
+            path = os.path.join(tmp, output_file)
 
             # Set the output resolution for videos that get stretched during playback
             if playback_resolution is not None:

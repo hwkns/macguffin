@@ -3,6 +3,7 @@ import os
 import shutil
 import logging
 import subprocess
+import tempfile
 import math
 
 import trackers
@@ -32,7 +33,9 @@ class Torrent(object):
         assert isinstance(tracker, trackers.BaseTracker)
         self.announce_url = tracker.announce_url
 
-        self.path = '/tmp/{name}.torrent'.format(name=release.name)
+        file_name = '{name}.torrent'.format(name=release.name)
+        tmp = tempfile.gettempdir()
+        self.path = os.path.join(tmp, file_name)
 
         # Overwrite any existing torrent file at this path
         try:
