@@ -17,7 +17,7 @@ class TMDB(object):
         self.imdb_id = imdb_id
         self.title = title
         self.year = year
-        self.base_url = 'https://api.themoviedb.org/3'
+        self.base_url = 'https://api.themoviedb.org/3/'
         self.json = None
         self.valid_poster_sizes = None
         self.original_title = None
@@ -26,50 +26,73 @@ class TMDB(object):
         self.poster_path = None
         self.poster_size = None
         self.poster_url = None
+        self.disclaimer_was_shown = False
 
         self.session = requests.session()
+
+    def __repr__(self):
+        return self.__class__.__name__
+
+    def request(self, path='', method='GET', params=None, data=None, files=None, verify=None, allow_redirects=True):
+        url = self.base_url + path
+
+        # Make sure we include the API key in each request
+        params_with_key = {
+            'api_key': config.TMDB_API_KEY,
+        }
+        if params is not None:
+            params_with_key.update(params)
+
+        try:
+            response = self.session.request(
+                method=method,
+                url=url,
+                params=params_with_key,
+                data=data,
+                files=files,
+                verify=verify,
+                allow_redirects=allow_redirects,
+            )
+            response.raise_for_status()
+        except requests.RequestException as e:
+            msg = 'Could not connect to {site}: {error}'
+            raise TMDBError(msg.format(site=self, error=e))
+
+        try:
+            return response.json()
+        except ValueError:
+            msg = 'Response is not JSON!\n{response_text}'
+            raise TMDBError(msg.format(response_text=response.text))
 
     def get_configuration(self):
 
         logging.debug('Getting TMDB configuration.')
 
-        params = {
-            'api_key': config.TMDB_API_KEY
-        }
-
-        url = self.base_url + '/configuration'
-        response = self.session.get(url, params=params)
-        response.raise_for_status()
-        response = response.json()
+        response = self.request('configuration')
 
         self.poster_base = response['images']['secure_base_url']
         self.valid_poster_sizes = response['images']['poster_sizes']
 
-        logging.info('DISCLAIMER: This product uses the TMDb API, but is not endorsed or certified by TMDb.')
+        if not self.disclaimer_was_shown:
+            logging.info('DISCLAIMER: This product uses the TMDb API, but is not endorsed or certified by TMDb.')
+            self.disclaimer_was_shown = True
 
     def get_id_by_imdb(self, imdb_id):
-
-        params = {
-            'api_key': config.TMDB_API_KEY
-        }
 
         msg = 'Searching TMDB using IMDb ID "{id}"'
         logging.debug(msg.format(id=imdb_id))
 
-        url = self.base_url + '/movie/' + imdb_id
-        response = self.session.get(url, params=params)
-        response = response.json()
+        response = self.request('movie/' + imdb_id)
 
         if response.get('status_code') == 6:
-            msg = 'TMDB could not find IMDb ID "{id}"'
+            msg = 'Could not find film with IMDb ID "{id}"'
             logging.error(msg.format(id=imdb_id))
-        else:
-            return response['id']
+
+        return response['id']
 
     def get_id_by_title(self, title, year=None):
 
         params = {
-            'api_key': config.TMDB_API_KEY,
             'query': title
         }
 
@@ -79,15 +102,13 @@ class TMDB(object):
         msg = 'Searching TMDB using query "{title}" and year "{year}"'
         logging.debug(msg.format(title=title, year=year))
 
-        url = self.base_url + '/search/movie'
-        response = self.session.get(url, params=params)
-        response = response.json()
+        response = self.request('search/movie', params=params)
 
         if response['total_results'] == 0:
-            msg = 'TMDB could not find title "{title}"'
+            msg = 'Could not find film title "{title}"'
             logging.error(msg.format(title=title))
-        else:
-            return response['results'][0]['id']
+
+        return response['results'][0]['id']
 
     def get_metadata(self, poster_size='w500'):
 
@@ -110,20 +131,14 @@ class TMDB(object):
         if self.id is None:
             raise TMDBError('Film could not be found on TMDB!')
 
-        params = {
-            'api_key': config.TMDB_API_KEY
-        }
-
         msg = 'Getting TMDB info using ID "{id}"'
         logging.debug(msg.format(id=self.id))
 
-        url = self.base_url + '/movie/' + str(self.id)
-        response = self.session.get(url, params=params)
-        self.json = response.json()
+        self.json = self.session.get('movie/' + str(self.id))
 
         if self.json.get('status_code') == 6:
             msg = 'Invalid TMDB ID "{id}"'
-            logging.error(msg.format(id=self.id))
+            raise TMDBError(msg.format(id=self.id))
         else:
             self.imdb_id = self.json['imdb_id']
             self.title = self.json['title']
