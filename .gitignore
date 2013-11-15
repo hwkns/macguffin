@@ -1,0 +1,19 @@
+# OS X specific
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+
+# Python
+*.py[cod]
+
+# PyCharm
+.idea
+.iml
+
+# Thumbnails
+._*
+
+# Files that might appear on external disk
+.Spotlight-V100
+.Trashes
