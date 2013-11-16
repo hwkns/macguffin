@@ -53,7 +53,10 @@ class TMDB(object):
                 verify=verify,
                 allow_redirects=allow_redirects,
             )
-            response.raise_for_status()
+            if response.status_code == 404:
+                return dict()
+            else:
+                response.raise_for_status()
         except requests.RequestException as e:
             msg = 'Could not connect to {site}: {error}'
             raise TMDBError(msg.format(site=self, error=e))
@@ -84,7 +87,7 @@ class TMDB(object):
 
         response = self.request('movie/' + imdb_id)
 
-        if response.get('status_code') == 6:
+        if not response:
             msg = 'Could not find film with IMDb ID "{id}"'
             logging.error(msg.format(id=imdb_id))
 
@@ -134,9 +137,9 @@ class TMDB(object):
         msg = 'Getting TMDB info using ID "{id}"'
         logging.debug(msg.format(id=self.id))
 
-        self.json = self.session.get('movie/' + str(self.id))
+        self.json = self.request('movie/' + str(self.id))
 
-        if self.json.get('status_code') == 6:
+        if not self.json:
             msg = 'Invalid TMDB ID "{id}"'
             raise TMDBError(msg.format(id=self.id))
         else:
