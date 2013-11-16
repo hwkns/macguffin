@@ -10,6 +10,7 @@ Compatible with Python 2.7, 3.2, and 3.3.
 
 from __future__ import print_function, unicode_literals, division, absolute_import
 import sys
+import os
 import logging
 
 import __init__
@@ -32,8 +33,8 @@ for path in release_list:
     # Log exceptions but don't raise them; just continue
     try:
 
+        config.set_log_file_name(os.path.split(path)[1] + '.log')
         upload = uploads.Upload(path=path, tracker=trackers.TehConnection)
-        config.set_log_file_name(upload.release.name + '.log')
         logging.info('------------------------------------------------------------')
         logging.info(upload.release.name)
         logging.info('------------------------------------------------------------')
