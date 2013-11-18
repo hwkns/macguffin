@@ -48,7 +48,10 @@ class IMDb(object):
             return format_str.format(link=self.link)
 
     def __eq__(self, other):
-        return self.id == other.id
+        if other is None:
+            return False
+        else:
+            return self.id == other.id
 
     def __hash__(self):
         return None
