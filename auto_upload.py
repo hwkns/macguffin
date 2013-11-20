@@ -13,7 +13,6 @@ import sys
 import os
 import logging
 
-import __init__
 import config
 import files
 import trackers
@@ -33,7 +32,7 @@ for path in release_list:
     # Log exceptions but don't raise them; just continue
     try:
 
-        config.set_log_file_name(os.path.split(path)[1] + '.log')
+        config.set_log_file_name(os.path.basename(path) + '.log')
         upload = uploads.Upload(path=path, tracker=trackers.TehConnection)
         logging.info('------------------------------------------------------------')
         logging.info(upload.release.name)
