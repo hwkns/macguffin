@@ -1,5 +1,6 @@
 from __future__ import print_function, unicode_literals, division, absolute_import
 import re
+import io
 import os
 import sys
 import logging
@@ -8,12 +9,6 @@ try:
     from bs4 import BeautifulSoup
 except ImportError:
     logging.critical('You must install "beautifulsoup4" for this script to work.  Try "pip install beautifulsoup4".')
-    sys.exit(1)
-
-try:
-    import requests
-except ImportError:
-    logging.critical('You must install "requests" for this script to work.  Try "pip install requests".')
     sys.exit(1)
 
 import config
@@ -82,7 +77,7 @@ class ImageBam(BaseImageHost):
         file_objects = []
         for n in range(len(image_paths)):
             img_num = str(n + 1).zfill(3)
-            file_objects.append(open(image_paths[n], 'rb'))
+            file_objects.append(io.open(image_paths[n], mode='rb'))
             files.append((
                 'file[]',
                 (
