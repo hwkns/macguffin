@@ -7,6 +7,7 @@ Takes screenshots of a set of video files, and uploads them to an image host.
 from __future__ import print_function, unicode_literals, division, absolute_import
 import logging
 import argparse
+import os
 
 import files
 import image_hosts
@@ -45,7 +46,7 @@ args = parser.parse_args()
 for path in args.file_list:
 
     logging.info('------------------------------------------------------------')
-    logging.info(path)
+    logging.info(os.path.basename(path))
     logging.info('------------------------------------------------------------')
 
     try:
