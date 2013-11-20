@@ -24,7 +24,7 @@ class NFO(object):
         self.codec = 'cp437'
 
         # Assume CP-437 encoding and read in the file
-        with io.open(self.path, 'rb') as nfo_file:
+        with io.open(self.path, mode='rb') as nfo_file:
             nfo_bytes = nfo_file.read()
 
         for (bom, codec) in byte_order_mark_codecs.items():

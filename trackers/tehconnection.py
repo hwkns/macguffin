@@ -2,6 +2,7 @@ from __future__ import print_function, unicode_literals, division, absolute_impo
 import logging
 import pprint
 import sys
+import io
 
 try:
     from bs4 import BeautifulSoup
@@ -214,7 +215,7 @@ class TehConnection(BaseTracker):
         self.request('imdb.php', params=params, verify=False)
 
         torrent_file = {
-            'file_input': open(upload.torrent.path, 'rb')
+            'file_input': io.open(upload.torrent.path, mode='rb')
         }
 
         data = {
