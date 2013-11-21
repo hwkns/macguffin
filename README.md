@@ -23,7 +23,7 @@ Requirements
 Installation
 ------------
 
-- `sudo apt-get install unrar ffmpeg ffprobe mediainfo mktorrent python-pip`
+- `sudo apt-get install unrar ffmpeg ffprobe mediainfo python-pip`
 - `sudo apt-get install python-dev libxml2-dev libxslt-dev python-libxml2 python-libxslt1`
 - `sudo pip install beautifulsoup4`
 - `sudo pip install lxml`
