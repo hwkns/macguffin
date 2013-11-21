@@ -11,7 +11,6 @@ Requirements
 - Debian or Ubuntu
 - Python 2.7, 3.2, or 3.3
 - ffmpeg or avconv
-- mktorrent
 - mediainfo
 - unrar
   - On Debian 7 and above, you may need to pull the .deb for unrar from the squeeze repo:

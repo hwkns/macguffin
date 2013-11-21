@@ -2,6 +2,7 @@ from __future__ import print_function, unicode_literals, division, absolute_impo
 import os
 import string
 import random
+import hashlib
 import logging
 import subprocess
 from io import StringIO
@@ -30,6 +31,14 @@ def get_paths(args):
         if abs_path is not None:
             valid_paths.append(abs_path)
     return valid_paths
+
+
+def split_path(path):
+    """
+    Returns a normalized list of the path's components.
+    """
+    path = os.path.normpath(path)
+    return [x for x in path.split(os.path.sep) if x]
 
 
 def generate_id(size=10, chars=string.ascii_uppercase + string.digits):
@@ -121,6 +130,16 @@ def unrar(rar_file_path, destination_dir=None):
 
     # Return the list of paths
     return extracted_files
+
+
+def sha1(data):
+    """
+    Return the SHA-1 hash of the given data.
+    """
+    assert isinstance(data, (bytes, bytearray))
+    sha1_hash = hashlib.sha1()
+    sha1_hash.update(data)
+    return sha1_hash.digest()
 
 
 class FileUtilsError(Exception):
