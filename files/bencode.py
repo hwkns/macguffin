@@ -48,12 +48,11 @@ def bencode(thing):
         return _bytes('i{thing}e'.format(thing=thing))
 
     elif isinstance(thing, unicode):
-        result = _bytes(unicode(len(_bytes(thing))) + ':')
-        result += thing
-        return result
+        return bencode(_bytes(thing))
 
     elif isinstance(thing, bytes):
-        result = _bytes(unicode(len(thing)) + ':')
+        result = _bytes(unicode(len(thing)))
+        result += b':'
         result += thing
         return result
 
@@ -79,4 +78,5 @@ def bencode(thing):
         result += b'e'
         return result
 
-    raise TypeError('bencoding objects of type "{type}" is not supported'.format(type=type(thing)))
+    else:
+        raise TypeError('bencoding objects of type "{type}" is not supported'.format(type=type(thing)))
