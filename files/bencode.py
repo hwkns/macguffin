@@ -45,38 +45,37 @@ def bencode(thing):
     @rtype: bytes
     """
     if isinstance(thing, int):
-        return _bytes('i{thing}e'.format(thing=thing))
+        result = _bytes('i{thing}e'.format(thing=thing))
 
     elif isinstance(thing, unicode):
-        return bencode(_bytes(thing))
+        result = bencode(_bytes(thing))
 
     elif isinstance(thing, bytes):
         result = _bytes(unicode(len(thing)))
         result += b':'
         result += thing
-        return result
 
     elif isinstance(thing, bytearray):
-        return bencode(bytes(thing))
+        result = bencode(bytes(thing))
 
     elif isinstance(thing, list):
         result = b'l'
-        result += b''.join(bencode(i) for i in thing)
+        for item in thing:
+            result += bencode(item)
         result += b'e'
-        return result
 
     elif isinstance(thing, dict):
-        result = b'd'
-
         keys = list(thing.keys())
         keys.sort()
 
+        result = b'd'
         for key in keys:
             result += bencode(key)
             result += bencode(thing[key])
-
         result += b'e'
-        return result
 
     else:
         raise TypeError('bencoding objects of type "{type}" is not supported'.format(type=type(thing)))
+
+    assert isinstance(result, bytes), 'Not bytes: [{type}] {result}'.format(type=type(result), result=result)
+    return result
