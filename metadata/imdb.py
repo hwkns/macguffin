@@ -62,8 +62,11 @@ class IMDb(object):
         """
 
         url = 'http://www.imdb.com/title/{id}/{page}'.format(id=self.id, page=page)
-        response = requests.get(url)
-        response.raise_for_status()
+        try:
+            response = requests.get(url)
+            response.raise_for_status()
+        except requests.RequestException as e:
+            raise IMDbError(e)
 
         return BeautifulSoup(response.text, 'lxml')
 
