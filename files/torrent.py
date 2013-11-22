@@ -3,6 +3,7 @@ import tempfile
 import logging
 import hashlib
 import shutil
+import pprint
 import time
 import os
 import io
@@ -72,7 +73,6 @@ class Torrent(object):
         else:
             raise TorrentError('"{path}" is not a file or directory!'.format(path=self.release.path))
 
-        info['piece length'] = self.piece_size
         info['private'] = 1
         metainfo = {
             'info':           info,
@@ -81,6 +81,8 @@ class Torrent(object):
             'created by':     'MacGuffin',
             'comment':        'Created with MacGuffin',
         }
+
+        logging.debug(pprint.pformat(metainfo))
 
         return metainfo
 
@@ -97,7 +99,7 @@ class Torrent(object):
         assert os.path.isfile(file_path), '{path} is not a file'.format(path=file_path)
 
         # File's byte count
-        length = 0
+        file_size = 0
 
         # Concatenated 20-byte SHA-1 hashes of all the file's pieces
         pieces = bytearray()
@@ -120,19 +122,20 @@ class Torrent(object):
                 if include_md5_sum:
                     md5.update(piece_data)
 
-                length += len(piece_data)
+                file_size += len(piece_data)
 
                 piece_hash = files.sha1(piece_data)[:20]
                 pieces.extend(piece_hash)
 
-        if length == 0:
+        if file_size == 0:
             msg = '"{path}" is a zero byte file!'
             raise TorrentError(msg.format(path=file_path))
 
         info = {
-            'pieces': pieces,
-            'name':   os.path.basename(file_path),
-            'length': length,
+            'pieces':        pieces,
+            'piece length':  piece_size,
+            'name':          os.path.basename(file_path),
+            'length':        file_size,
         }
 
         if include_md5_sum:
@@ -143,7 +146,7 @@ class Torrent(object):
         return info
 
     @staticmethod
-    def _create_directory_info_dict(dir_path, piece_size, include_md5_sum=True):
+    def _create_directory_info_dict(root_dir_path, piece_size, include_md5_sum=True):
         """
         Returns a dictionary with the following keys:
              - pieces: concatenated 20-byte SHA-1 hashes
@@ -154,7 +157,7 @@ class Torrent(object):
                  - path:   list of the file's path components, relative to the directory
         @rtype: dict
         """
-        assert os.path.isdir(dir_path), '{path} is not a directory'.format(path=dir_path)
+        assert os.path.isdir(root_dir_path), '{path} is not a directory'.format(path=root_dir_path)
 
         # Concatenated 20-byte SHA-1 hashes of all the torrent's pieces.
         info_pieces = bytearray()
@@ -165,7 +168,7 @@ class Torrent(object):
 
         file_dicts = []
 
-        for (dir_path, dir_names, file_names) in os.walk(dir_path):
+        for (dir_path, dir_names, file_names) in os.walk(root_dir_path):
 
             for file_name in file_names:
 
@@ -174,12 +177,12 @@ class Torrent(object):
                     file_path = os.path.join(dir_path, file_name)
 
                     # File's byte count
-                    length = 0
+                    file_size = 0
 
                     # File's md5sum
                     md5 = hashlib.md5() if include_md5_sum else None
 
-                    logging.info('Hashing file "{path}"... '.format(path=os.path.relpath(file_path, dir_path)))
+                    logging.info('Hashing file "{path}"... '.format(path=os.path.relpath(file_path, root_dir_path)))
 
                     with io.open(file_path, mode='rb') as f:
                         while True:
@@ -188,7 +191,7 @@ class Torrent(object):
                             if len(piece_data) == 0:
                                 break
 
-                            length += len(piece_data)
+                            file_size += len(piece_data)
 
                             data_buffer.extend(piece_data)
 
@@ -202,8 +205,8 @@ class Torrent(object):
 
                     # Build the current file's dictionary.
                     file_dict = {
-                        'length': length,
-                        'path':   files.split_path(os.path.relpath(file_path, dir_path))
+                        'length': file_size,
+                        'path':   files.split_path(os.path.relpath(file_path, root_dir_path))
                     }
 
                     if include_md5_sum:
@@ -217,9 +220,10 @@ class Torrent(object):
             info_pieces.extend(piece_hash)
 
         info = {
-            'pieces': info_pieces,
-            'name':   os.path.basename(dir_path.strip(os.path.sep)),
-            'files':  file_dicts,
+            'pieces':        info_pieces,
+            'piece length':  piece_size,
+            'name':          os.path.basename(root_dir_path.strip(os.path.sep)),
+            'files':         file_dicts,
         }
 
         assert len(info['pieces']) % 20 == 0, 'len(pieces) is not a multiple of 20 bytes!'
