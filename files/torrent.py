@@ -82,7 +82,8 @@ class Torrent(object):
             'comment':        'Created with MacGuffin',
         }
 
-        logging.debug(pprint.pformat(metainfo))
+        msg = 'Torrent metainfo dictionary:\n{metainfo}'
+        logging.debug(msg.format(metainfo=pprint.pformat(metainfo)))
 
         return metainfo
 
@@ -96,10 +97,13 @@ class Torrent(object):
              - md5sum: md5sum of the file (if include_md5_sum is True)
         @rtype: dict
         """
-        assert os.path.isfile(file_path), '{path} is not a file'.format(path=file_path)
+        if not os.path.isfile(file_path):
+            msg = '"{path}" is not a file'
+            raise TorrentError(msg.format(path=file_path))
 
-        # File's byte count
-        file_size = 0
+        if os.path.getsize(file_path) == 0:
+            msg = '"{path}" is a zero byte file!'
+            raise TorrentError(msg.format(path=file_path))
 
         # Concatenated 20-byte SHA-1 hashes of all the file's pieces
         pieces = bytearray()
@@ -110,32 +114,20 @@ class Torrent(object):
         msg = 'Hashing file "{path}"... '
         logging.info(msg.format(path=file_path))
 
-        with io.open(file_path, mode='rb') as f:
+        file_pieces = create_piece_generator(file_path, piece_size)
+        for piece in file_pieces:
 
-            while True:
+            piece_hash = files.sha1(piece)
+            pieces.extend(piece_hash)
 
-                piece_data = f.read(piece_size)
-
-                if len(piece_data) == 0:
-                    break
-
-                if include_md5_sum:
-                    md5.update(piece_data)
-
-                file_size += len(piece_data)
-
-                piece_hash = files.sha1(piece_data)[:20]
-                pieces.extend(piece_hash)
-
-        if file_size == 0:
-            msg = '"{path}" is a zero byte file!'
-            raise TorrentError(msg.format(path=file_path))
+            if include_md5_sum:
+                md5.update(piece)
 
         info = {
             'pieces':        pieces,
             'piece length':  piece_size,
             'name':          os.path.basename(file_path),
-            'length':        file_size,
+            'length':        os.path.getsize(file_path),
         }
 
         if include_md5_sum:
@@ -157,7 +149,9 @@ class Torrent(object):
                  - path:   list of the file's path components, relative to the directory
         @rtype: dict
         """
-        assert os.path.isdir(root_dir_path), '{path} is not a directory'.format(path=root_dir_path)
+        if not os.path.isdir(root_dir_path):
+            msg = '"{path}" is not a directory'
+            raise TorrentError(msg.format(path=root_dir_path))
 
         # Concatenated 20-byte SHA-1 hashes of all the torrent's pieces.
         info_pieces = bytearray()
@@ -172,51 +166,41 @@ class Torrent(object):
 
             for file_name in file_names:
 
-                # If the file's extension is in the whitelist...
-                if os.path.splitext(file_name)[1].lower() in FILE_EXTENSION_WHITELIST:
-                    file_path = os.path.join(dir_path, file_name)
+                # If the file's extension isn't in the whitelist, ignore it
+                if os.path.splitext(file_name)[1].lower() not in FILE_EXTENSION_WHITELIST:
+                    continue
 
-                    # File's byte count
-                    file_size = 0
+                file_path = os.path.join(dir_path, file_name)
 
-                    # File's md5sum
-                    md5 = hashlib.md5() if include_md5_sum else None
+                # Build the current file's dictionary.
+                file_dict = {
+                    'length': os.path.getsize(file_path),
+                    'path':   files.split_path(os.path.relpath(file_path, root_dir_path))
+                }
 
-                    logging.info('Hashing file "{path}"... '.format(path=os.path.relpath(file_path, root_dir_path)))
+                # Keep track of the file's MD5 sum
+                md5 = hashlib.md5() if include_md5_sum else None
 
-                    with io.open(file_path, mode='rb') as f:
-                        while True:
-                            piece_data = f.read(piece_size)
+                logging.info('Hashing file "{path}"... '.format(path=os.path.relpath(file_path, root_dir_path)))
 
-                            if len(piece_data) == 0:
-                                break
-
-                            file_size += len(piece_data)
-
-                            data_buffer.extend(piece_data)
-
-                            if len(data_buffer) >= piece_size:
-                                piece_hash = files.sha1(data_buffer[:piece_size])[:20]
-                                info_pieces.extend(piece_hash)
-                                data_buffer[:] = data_buffer[piece_size:]
-
-                            if include_md5_sum:
-                                md5.update(piece_data)
-
-                    # Build the current file's dictionary.
-                    file_dict = {
-                        'length': file_size,
-                        'path':   files.split_path(os.path.relpath(file_path, root_dir_path))
-                    }
-
+                file_pieces = create_piece_generator(file_path, piece_size)
+                for piece in file_pieces:
+                    data_buffer.extend(piece)
+                    if len(data_buffer) >= piece_size:
+                        piece_hash = files.sha1(data_buffer[:piece_size])
+                        info_pieces.extend(piece_hash)
+                        data_buffer[:] = data_buffer[piece_size:]
                     if include_md5_sum:
-                        file_dict['md5sum'] = md5.hexdigest()
+                        md5.update(piece)
 
-                    file_dicts.append(file_dict)
+                if include_md5_sum:
+                    file_dict['md5sum'] = md5.hexdigest()
+
+                file_dicts.append(file_dict)
 
         # Hash any remaining data that is fewer than piece_size bytes
         if len(data_buffer) > 0:
-            piece_hash = files.sha1(data_buffer)[:20]
+            piece_hash = files.sha1(data_buffer)
             info_pieces.extend(piece_hash)
 
         info = {
@@ -229,6 +213,15 @@ class Torrent(object):
         assert len(info['pieces']) % 20 == 0, 'len(pieces) is not a multiple of 20 bytes!'
 
         return info
+
+
+def create_piece_generator(file_path, piece_size):
+    with io.open(file_path, mode='rb') as f:
+        while True:
+            piece_data = f.read(piece_size)
+            if not piece_data:
+                break
+            yield piece_data
 
 
 class TorrentError(Exception):
