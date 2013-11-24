@@ -105,6 +105,10 @@ class Torrent(object):
             msg = '"{path}" is a zero byte file!'
             raise TorrentError(msg.format(path=file_path))
 
+        if piece_size < (16 * KB):
+            msg = 'Piece size {size} is less than 16 KiB!'
+            raise TorrentError(msg.format(size=piece_size))
+
         # Concatenated 20-byte SHA-1 hashes of all the file's pieces
         pieces = bytearray()
 
@@ -152,6 +156,10 @@ class Torrent(object):
         if not os.path.isdir(root_dir_path):
             msg = '"{path}" is not a directory'
             raise TorrentError(msg.format(path=root_dir_path))
+
+        if piece_size < (16 * KB):
+            msg = 'Piece size {size} is less than 16 KiB!'
+            raise TorrentError(msg.format(size=piece_size))
 
         # Concatenated 20-byte SHA-1 hashes of all the torrent's pieces.
         info_pieces = bytearray()
@@ -216,12 +224,16 @@ class Torrent(object):
 
 
 def create_piece_generator(file_path, piece_size):
+
+    file_size = os.path.getsize(file_path)
+    if file_size % piece_size == 0:
+        num_pieces = file_size // piece_size
+    else:
+        num_pieces = (file_size // piece_size) + 1
+
     with io.open(file_path, mode='rb') as f:
-        while True:
-            piece_data = f.read(piece_size)
-            if not piece_data:
-                break
-            yield piece_data
+        for i in range(num_pieces):
+            yield f.read(piece_size)
 
 
 class TorrentError(Exception):
