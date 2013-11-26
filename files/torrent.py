@@ -14,7 +14,6 @@ import files
 KB = 1024
 MB = 1048576
 GB = 1073741824
-FILE_EXTENSION_WHITELIST = ('.mkv', 'mp4', '.avi', '.ts', '.nfo', '.png', '.sub', '.idx', '.srt')
 
 
 class Torrent(object):
@@ -36,7 +35,7 @@ class Torrent(object):
 
         assert isinstance(tracker, trackers.BaseTracker)
         self.announce_url = tracker.announce_url
-
+        self.extension_whitelist = tracker.FILE_EXTENSION_WHITELIST
         self.release = release
 
         file_name = '{name}.torrent'.format(name=self.release.name)
@@ -60,10 +59,26 @@ class Torrent(object):
         logging.info('Torrent created successfully.')
 
     def move_to(self, destination):
+
         assert os.path.isfile(self.path)
+        if not os.path.isdir(destination):
+            msg = 'Destination "{path}" is not a directory!'
+            raise TorrentError(msg.format(path=destination))
+
+        file_name = os.path.basename(self.path)
+        new_path = os.path.join(destination, file_name)
+
         msg = 'Moving torrent file "{torrent_file}" to "{destination}"'
-        logging.info(msg.format(torrent_file=os.path.basename(self.path), destination=destination))
+        logging.info(msg.format(torrent_file=file_name, destination=destination))
+
+        # Overwrite any existing torrent file at this path
+        try:
+            os.unlink(new_path)
+        except OSError:
+            pass
+
         shutil.move(self.path, destination)
+        self.path = new_path
 
     def _create_metainfo_dict(self, include_md5_sum=True):
         if os.path.isfile(self.release.path):
@@ -87,8 +102,7 @@ class Torrent(object):
 
         return metainfo
 
-    @staticmethod
-    def _create_file_info_dict(file_path, piece_size, include_md5_sum=True):
+    def _create_file_info_dict(self, file_path, piece_size, include_md5_sum=True):
         """
         Returns a dictionary with the following keys:
              - pieces: concatenated 20-byte SHA-1 hashes
@@ -105,9 +119,10 @@ class Torrent(object):
             msg = '"{path}" is a zero byte file!'
             raise TorrentError(msg.format(path=file_path))
 
-        if piece_size < (16 * KB):
-            msg = 'Piece size {size} is less than 16 KiB!'
-            raise TorrentError(msg.format(size=piece_size))
+        file_extension = os.path.splitext(file_path)[1].lower()
+        if (self.extension_whitelist is not None) and (file_extension not in self.extension_whitelist):
+            msg = '"{path}" is not a valid file type for upload to this tracker'
+            raise TorrentError(msg.format(path=file_path))
 
         # Concatenated 20-byte SHA-1 hashes of all the file's pieces
         pieces = bytearray()
@@ -141,8 +156,7 @@ class Torrent(object):
 
         return info
 
-    @staticmethod
-    def _create_directory_info_dict(root_dir_path, piece_size, include_md5_sum=True):
+    def _create_directory_info_dict(self, root_dir_path, piece_size, include_md5_sum=True):
         """
         Returns a dictionary with the following keys:
              - pieces: concatenated 20-byte SHA-1 hashes
@@ -175,7 +189,8 @@ class Torrent(object):
             for file_name in file_names:
 
                 # If the file's extension isn't in the whitelist, ignore it
-                if os.path.splitext(file_name)[1].lower() not in FILE_EXTENSION_WHITELIST:
+                file_extension = os.path.splitext(file_name)[1].lower()
+                if (self.extension_whitelist is not None) and (file_extension not in self.extension_whitelist):
                     continue
 
                 file_path = os.path.join(dir_path, file_name)
@@ -225,12 +240,13 @@ class Torrent(object):
 
 def create_piece_generator(file_path, piece_size):
 
+    # Find the number of pieces in the file
     file_size = os.path.getsize(file_path)
-    if file_size % piece_size == 0:
-        num_pieces = file_size // piece_size
-    else:
-        num_pieces = (file_size // piece_size) + 1
+    num_pieces = file_size // piece_size
+    if file_size % piece_size != 0:
+        num_pieces += 1
 
+    # Yield pieces
     with io.open(file_path, mode='rb') as f:
         for i in range(num_pieces):
             yield f.read(piece_size)

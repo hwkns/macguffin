@@ -20,6 +20,19 @@ if sys.version_info[0] >= 3:
 
 class TehConnection(BaseTracker):
 
+    # The file extensions allowed in TC torrents
+    FILE_EXTENSION_WHITELIST = {
+        '.mkv',
+        '.mp4',
+        '.avi',
+        '.ts',
+        '.nfo',
+        '.png',
+        '.sub',
+        '.idx',
+        '.srt',
+    }
+
     # The video containers allowed on TC
     CONTAINER_WHITELIST = {
         metadata.Containers.MKV,
@@ -185,7 +198,7 @@ class TehConnection(BaseTracker):
 
         return possible_dupes
 
-    def take_upload(self, upload):
+    def take_upload(self, upload, dry_run=False):
 
         # Banned container check, banned release group check
         self.check_upload(upload)
@@ -276,24 +289,31 @@ class TehConnection(BaseTracker):
         msg = 'Upload form data:\n{form_fields}'
         logging.debug(msg.format(form_fields=pprint.pformat(data)))
 
-        # Post the upload form
-        response = self.request('upload.php', method=b'POST', data=data, files=torrent_file, verify=False)
+        if dry_run:
 
-        if not response.history:
-
-            # Log any errors displayed by the upload form
-            soup = BeautifulSoup(response.text)
-            error_elements = soup.find_all('p', style='color: red;text-align:center;')
-            for error in error_elements:
-                logging.error(error.string.strip())
-
-            raise TrackerError('Upload failed!')
+            logging.info('Skipping actual upload -- this is a dry run!')
 
         else:
 
-            msg = 'Upload complete: {url}'
-            logging.info(msg.format(url=response.url))
-            torrent_file['file_input'].close()
+            # Post the upload form
+            response = self.request('upload.php', method=b'POST', data=data, files=torrent_file, verify=False)
+
+            if not response.history:
+
+                # Log any errors displayed by the upload form
+                soup = BeautifulSoup(response.text)
+                error_elements = soup.find_all('p', style='color: red;text-align:center;')
+                for error in error_elements:
+                    logging.error(error.string.strip())
+
+                raise TrackerError('Upload failed!')
+
+            else:
+
+                msg = 'Upload complete: {url}'
+                logging.info(msg.format(url=response.url))
+
+        torrent_file['file_input'].close()
 
 
 CATEGORY_ID = {

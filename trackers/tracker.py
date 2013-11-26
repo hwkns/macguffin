@@ -26,6 +26,20 @@ class BaseTracker(object):
 
     __metaclass__ = ABCMeta
 
+    # The file extensions allowed by the tracker
+    # NOTE: to allow all file types, set this to None
+    FILE_EXTENSION_WHITELIST = {
+        '.mkv',
+        '.mp4',
+        '.avi',
+        '.ts',
+        '.nfo',
+        '.png',
+        '.sub',
+        '.idx',
+        '.srt',
+    }
+
     # The video containers allowed by the tracker
     CONTAINER_WHITELIST = {
         metadata.Containers.MKV,
@@ -113,7 +127,6 @@ class BaseTracker(object):
         assert upload.metadata_is_verified
         assert upload.technical_is_verified
         assert upload.mediainfo is not None
-        assert upload.screenshots is not None
         assert upload.torrent is not None
         assert upload.bbcode is not None
         assert upload.title is not None
@@ -122,6 +135,7 @@ class BaseTracker(object):
         assert upload.codec is not None
         assert upload.container is not None
         assert upload.resolution is not None
+        assert (upload.screenshots is not None) or (upload.take_screens is False)
 
         # Check container
         if upload.release.container not in self.CONTAINER_WHITELIST:
@@ -134,7 +148,7 @@ class BaseTracker(object):
             raise TrackerError(msg.format(group=upload.release.group, tracker=self))
 
     @abstractmethod
-    def take_upload(self, upload):
+    def take_upload(self, upload, dry_run=False):
         """
         Upload a release to the tracker.
 

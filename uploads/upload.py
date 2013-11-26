@@ -1,5 +1,4 @@
 from __future__ import print_function, unicode_literals, division, absolute_import
-import os
 import sys
 import logging
 from io import StringIO
@@ -28,7 +27,7 @@ class Upload(object):
     Represents the preparation and execution of an upload to a Tracker.
     """
 
-    def __init__(self, path, tracker):
+    def __init__(self, path, tracker, screens=True):
 
         assert issubclass(tracker, trackers.BaseTracker)
 
@@ -40,6 +39,7 @@ class Upload(object):
         except files.ReleaseError as e:
             raise UploadInterruptedError(e)
 
+        self.take_screens = screens
         self.use_nfo = True
         self.metadata_is_verified = False
         self.technical_is_verified = False
@@ -60,7 +60,7 @@ class Upload(object):
         self.torrent = None
         self.bbcode = None
 
-    def start(self):
+    def start(self, dry_run=False):
 
         # Find the NFO file, if it exists
         self.nfo = self.release.get_nfo()
@@ -85,7 +85,7 @@ class Upload(object):
         try:
 
             # Extract RAR archives, get rid of unwanted files
-            self.release.clean_up()
+            self.release.clean_up(extension_whitelist=self.tracker.FILE_EXTENSION_WHITELIST)
 
             # Find the video file so we can run mediainfo on it
             self.release.find_video_file()
@@ -99,12 +99,15 @@ class Upload(object):
         self.technical_is_verified = self.verify_technical()
 
         # Take screenshots
-        try:
-            self.screenshots = files.Screenshots(self.release.video_file)
-            self.screenshots.take()
-            self.screenshots.upload()
-        except files.ScreenshotsError as e:
-            raise UploadInterruptedError(e)
+        if self.take_screens:
+            try:
+                self.screenshots = files.Screenshots(self.release.video_file)
+                self.screenshots.take()
+                self.screenshots.upload()
+            except files.ScreenshotsError as e:
+                raise UploadInterruptedError(e)
+        else:
+            logging.info('Skipping screenshots')
 
         # Prepare the upload description
         self.generate_bbcode()
@@ -117,17 +120,12 @@ class Upload(object):
 
         # Pull the trigger
         try:
-            self.tracker.take_upload(self)
+            self.tracker.take_upload(self, dry_run=dry_run)
         except trackers.TrackerError as e:
             raise UploadInterruptedError(e)
 
         # Move the .torrent file to the watch folder
-        if config.WATCH_DIR:
-            # Start seeding
-            self.torrent.move_to(config.WATCH_DIR)
-        else:
-            # Put torrent file in home dir
-            self.torrent.move_to(os.path.expanduser('~'))
+        self.torrent.move_to(config.WATCH_DIR)
 
     def get_imdb_id_from_nfo(self):
 

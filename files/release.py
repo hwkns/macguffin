@@ -178,76 +178,43 @@ class Release(object):
         else:
             self.is_scene = None
 
-    def find_unwanted_files(self):
+    def find_unwanted_files(self, extension_whitelist=None):
         """
         Get a list of all files in this release with extensions that are not whitelisted.
         """
 
         unwanted_files = []
 
-        if self.is_single_file or self.path is None:
+        if self.is_single_file or self.path is None or extension_whitelist is None:
             return []
 
         for (dir_path, dir_names, file_names) in os.walk(self.path, onerror=report_listdir_error):
             for file_name in file_names:
                 # If the file's extension is not in the whitelist...
-                if os.path.splitext(file_name)[1].lower() not in FILE_EXTENSION_WHITELIST:
+                file_extension = os.path.splitext(file_name)[1].lower()
+                if file_extension not in extension_whitelist:
                     path = os.path.join(dir_path, file_name)
                     unwanted_files.append(path)
 
         return unwanted_files
 
-    def clean_up(self):
+    def clean_up(self, extension_whitelist=None):
         """
-        Remove unwanted files and extract RAR files; create a new directory if OUTPUT_FOLDER is specified in config.
+        Remove unwanted files and extract RAR files.
         """
 
         if self.is_single_file or self.path is None:
             return
 
-        if config.OUTPUT_FOLDER is not None:
+        # Extract all RAR files in place
+        self.unrar()
 
-            # Make sure this is actually a directory
-            if not os.path.isdir(config.OUTPUT_FOLDER):
-                msg = 'The OUTPUT_FOLDER listed in config.py "{dir}" is not a directory!'
-                raise ReleaseError(msg.format(dir=config.OUTPUT_FOLDER))
-
-            # Copy whitelisted files to the new location
-            msg = 'Copying release to "{path}"'
-            logging.info(msg.format(path=config.OUTPUT_FOLDER))
-            new_path = os.path.join(config.OUTPUT_FOLDER, self.folder_name)
-
-            if self.is_single_file:
-                try:
-                    shutil.copy2(self.path, config.OUTPUT_FOLDER)
-                except Exception as e:
-                    msg = 'Error while copying: {error_string}'
-                    logging.error(msg.format(error_string=e))
-                    raise ReleaseError('Release could not be copied to output folder -- aborting upload.')
-            else:
-                try:
-                    shutil.copytree(self.path, new_path, ignore=whitelist_filter)
-                except OSError as error:
-                    msg = 'Error while copying to "{destination}": {os_error_string}'
-                    logging.error(msg.format(destination=error.filename, os_error_string=error.strerror))
-                    raise ReleaseError('Release could not be copied to output folder -- aborting upload.')
-                else:
-                    # Extract all RAR files to the new location
-                    self.unrar(destination_base_path=new_path)
-
-            # Set the release path to the new location
-            self.base_path = config.OUTPUT_FOLDER
-            self.path = new_path
-
-        else:
-            # Extract all RAR files in place
-            self.unrar()
-
-        # Remove any non-whitelisted files (in case any were added by unrar)
-        for path in self.find_unwanted_files():
-            msg = 'Deleting non-whitelisted file "{file}"'
-            logging.debug(msg.format(file=path))
-            os.unlink(path)
+        # Remove any non-whitelisted files
+        if config.DELETE_UNWANTED_FILES is True:
+            for path in self.find_unwanted_files(extension_whitelist=extension_whitelist):
+                msg = 'Deleting non-whitelisted file "{file}"'
+                logging.debug(msg.format(file=path))
+                os.unlink(path)
 
         # Remove any empty directories
         for (dir_path, dir_names, file_names) in os.walk(self.path, topdown=False, onerror=report_listdir_error):
@@ -443,22 +410,6 @@ def get_group(release_name):
         return group_name.group().strip('-')
 
 
-def whitelist_filter(dir_path, names):
-    """
-    Filter function for shutil.copytree().
-    """
-    return [
-        # Return a list of each name that is ...
-        name for name in names if
-
-        # not a directory ...
-        not os.path.isdir(os.path.join(dir_path, name))
-
-        # and its file extension is not in the whitelist.
-        and os.path.splitext(name)[1].lower() not in FILE_EXTENSION_WHITELIST
-    ]
-
-
 def report_listdir_error(os_error):
     """
     Error handling function for os.walk().
@@ -470,9 +421,6 @@ def report_listdir_error(os_error):
 class ReleaseError(Exception):
     pass
 
-
-# Whitelist for cleanup of releases
-FILE_EXTENSION_WHITELIST = ('.mkv', 'mp4', '.avi', '.ts', '.nfo', '.png', '.sub', '.idx', '.srt')
 
 # Whitelist for video file extensions (used for single file releases)
 VIDEO_EXTENSION_WHITELIST = ('.mkv', 'mp4', '.avi')

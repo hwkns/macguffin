@@ -21,36 +21,40 @@ IMGBAM_PASSWORD = ''
 ###################################################
 
 # Set this to your rtorrent watch folder path to automatically seed new torrents
-WATCH_DIR = None #os.path.expanduser('~/Downloads')
+WATCH_DIR = '~'
 
-# Set this path if you want to leave the original release untouched; this will cause
-# any modifications (e.g., unrar, stripping unnecessary files) to take place in a new folder.
-OUTPUT_FOLDER = None #os.path.expanduser('~/Uploads')
-
-# The log will be written to this file.  NOTE: existing logs will be overwritten,
-# so if you want to save a log, copy it before running the script again.
-LOG_DIR = os.path.expanduser('~')
+# Logs will be written to this directory, as {Release.Name}.log
+# NOTE: Existing logs will be overwritten.
+LOG_DIR = '~'
 
 # All tracker cookies will be saved here
-COOKIE_DIR = os.path.expanduser('~')
+COOKIE_DIR = '~'
 
 # Paths to various binaries on your system (in case they are not on the system path)
 MEDIAINFO_PATH = 'mediainfo'
 FFMPEG_PATH = 'ffmpeg'
 FFPROBE_PATH = 'ffprobe'
-MKTORRENT_PATH = 'mktorrent'
 UNRAR_PATH = 'unrar'
 
-# The -t flag to pass to mktorrent, set to False if you are not running the multi-threaded version. Or 1-20 if you are.
-MKTORRENT_THREADS = False
+# Set this to True if you want to delete files that don't make it into the uploaded torrent.
+# NOTE: If you want to cross-seed, this might not be a good idea.
+DELETE_UNWANTED_FILES = False
 
-# How many screenshots to upload
+# How many screenshots to upload by default
 NUM_SCREENSHOTS = 4
 DELETE_SCREENS_AFTER_UPLOAD = True
 
 ##################################################################
 ##  End user-edited section                                     ##
 ##################################################################
+
+# Expand paths
+if WATCH_DIR is not None:
+    WATCH_DIR = os.path.expanduser(WATCH_DIR)
+if LOG_DIR is not None:
+    LOG_DIR = os.path.expanduser(LOG_DIR)
+if COOKIE_DIR is not None:
+    COOKIE_DIR = os.path.expanduser(COOKIE_DIR)
 
 # Set logging level for the requests lib to warning+
 requests_log = logging.getLogger('requests')
