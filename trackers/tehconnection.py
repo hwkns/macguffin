@@ -274,8 +274,9 @@ class TehConnection(BaseTracker):
         }
 
         for genre in upload.imdb.genres:
-            gid = GENRE_ID[genre]
-            data['genre_' + gid] = gid
+            gid = GENRE_ID.get(genre)
+            if gid is not None:
+                data['genre_' + gid] = gid
 
         if upload.imdb.id:
             data['hasimdb'] = 'true'
