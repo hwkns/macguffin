@@ -1,12 +1,11 @@
 from __future__ import print_function, unicode_literals, division, absolute_import
 import os
-import shutil
 import logging
 import re
 
 import files
 import metadata
-import config
+import uploads
 
 
 class Release(object):
@@ -171,7 +170,7 @@ class Release(object):
             logging.debug(msg.format(name=self.name))
 
         # Decide Scene or P2P based on release group
-        if self.group in metadata.scene_groups:
+        if self.group in metadata.scene_groups or uploads.check_predb(self.name):
             self.is_scene = True
         elif self.group in metadata.p2p_groups:
             self.is_scene = False
@@ -198,9 +197,9 @@ class Release(object):
 
         return unwanted_files
 
-    def clean_up(self, extension_whitelist=None):
+    def clean_up(self, delete_unwanted_files=False, extension_whitelist=None):
         """
-        Remove unwanted files and extract RAR files.
+        Extract RAR files and remove unwanted files.
         """
 
         if self.is_single_file or self.path is None:
@@ -210,7 +209,7 @@ class Release(object):
         self.unrar()
 
         # Remove any non-whitelisted files
-        if config.DELETE_UNWANTED_FILES is True:
+        if delete_unwanted_files is True:
             for path in self.find_unwanted_files(extension_whitelist=extension_whitelist):
                 msg = 'Deleting non-whitelisted file "{file}"'
                 logging.debug(msg.format(file=path))

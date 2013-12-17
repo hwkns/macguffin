@@ -1,6 +1,20 @@
 from __future__ import print_function, unicode_literals, division, absolute_import
-import string
 from difflib import SequenceMatcher
+import logging
+import string
+import sys
+
+try:
+    from bs4 import BeautifulSoup
+except ImportError:
+    logging.critical('You must install "beautifulsoup4" for this script to work.  Try "pip install beautifulsoup4".')
+    sys.exit(1)
+
+try:
+    import requests
+except ImportError:
+    logging.critical('You must install "requests" for this script to work.  Try "pip install requests".')
+    sys.exit(1)
 
 
 def normalize_title(s):
@@ -46,3 +60,21 @@ def years_match(y1, y2):
         if y1 == str(int(y2) + i):
             return True
     return False
+
+
+def check_predb(release_name):
+    msg = 'Checking predb.me for "{release_name}"'
+    logging.debug(msg.format(release_name=release_name))
+    params = {
+        'search': release_name,
+        'cats': 'movies,-movies-discs',
+    }
+    try:
+        response = requests.get('http://predb.me/', params=params)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.text)
+        matches = set(link.text.strip() for link in soup.find_all('a', class_='p-title'))
+        return release_name in matches
+    except Exception as e:
+        logging.warning(e)
+        return False
