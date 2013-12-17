@@ -41,11 +41,10 @@ class IMDb(object):
 
     def __repr__(self):
         if self.title and self.year:
-            format_str = 'IMDb object - {title} ({year}) - {link}'
+            format_str = '{title} ({year}) - {link}'
             return format_str.format(title=self.title, year=self.year, link=self.link)
         else:
-            format_str = 'IMDb object - {link}'
-            return format_str.format(link=self.link)
+            return self.link
 
     def __eq__(self, other):
         if other is None:
