@@ -25,9 +25,7 @@ Installation
 
 - `sudo apt-get install unrar ffmpeg ffprobe mediainfo python-pip`
 - `sudo apt-get install python-dev libxml2-dev libxslt-dev python-libxml2 python-libxslt1`
-- `sudo pip install beautifulsoup4`
-- `sudo pip install lxml`
-- `sudo pip install requests`
+- `sudo pip install requests beautifulsoup4 lxml`
 - Edit config.py with your details
   - If you don't already have an API key from [TMDB](http://www.themoviedb.org), just
     [sign up](https://www.themoviedb.org/account/signup) and request one from your
