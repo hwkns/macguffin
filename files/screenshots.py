@@ -41,7 +41,7 @@ class Screenshots(object):
                 os.unlink(path)
         self.files = []
 
-    def take(self):
+    def take(self, num_screenshots):
         """
         Generate screenshots with ffmpeg
         """
@@ -65,18 +65,18 @@ class Screenshots(object):
         gop_duration = self.video_file.get_gop_duration()
 
         # Take twice as many shots as we'll need, so we can keep the best ones
-        num_screens = config.NUM_SCREENSHOTS * 2
+        num_screens_taken = num_screenshots * 2
 
         # We'll be taking a shot every 'step' seconds
-        step = duration / (num_screens + 1)
+        step = duration / (num_screens_taken + 1)
 
         # Don't want to overwrite the wrong files in /tmp, so prefix with a random string
         unique_string = files.utils.generate_id()
 
         msg = 'Taking {n} screenshots...'
-        logging.info(msg.format(n=num_screens))
+        logging.info(msg.format(n=num_screens_taken))
 
-        for i in range(num_screens):
+        for i in range(num_screens_taken):
             # Screenshot will be taken at this time code (in seconds)
             time_code = int(step * (i + 1))
 
@@ -117,23 +117,23 @@ class Screenshots(object):
 
             self.files.append(path)
 
-        assert len(self.files) == num_screens
+        assert len(self.files) == num_screens_taken
         assert self.verify()
 
         msg = 'Selecting the best {n} screenshots...'
-        logging.info(msg.format(n=config.NUM_SCREENSHOTS))
+        logging.info(msg.format(n=num_screenshots))
 
         # Sort the screenshots by file size (a decent approximation of the amount of detail they contain)
         sized_screens = sorted([(os.path.getsize(path), path) for path in self.files])
 
         # Delete the smaller half of the set
-        for (size, path) in sized_screens[:config.NUM_SCREENSHOTS]:
+        for (size, path) in sized_screens[:num_screenshots]:
             os.unlink(path)
 
         # Keep the rest
-        self.files = [path for (size, path) in sized_screens[config.NUM_SCREENSHOTS:]]
+        self.files = [path for (size, path) in sized_screens[num_screenshots:]]
 
-    def upload(self, image_host=image_hosts.ImageBam):
+    def upload(self, image_host=image_hosts.ImageBam, delete_after_upload=True):
         """
         Upload local screenshot files to an image host.
         """
@@ -167,13 +167,11 @@ class Screenshots(object):
                 self.links.append(link)
 
             # Get BBCode
-            self.bbcode += '[center][spoiler=Screenshots]'
             for bbcode_link in image_host.bbcode_links:
                 self.bbcode += bbcode_link
-            self.bbcode += '[/spoiler][/center]\n'
 
             # Delete local files
-            if config.DELETE_SCREENS_AFTER_UPLOAD:
+            if delete_after_upload:
                 self.delete()
 
 

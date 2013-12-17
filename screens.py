@@ -14,6 +14,7 @@ import image_hosts
 import config
 
 image_host = image_hosts.ImageBam
+
 config.set_log_file_name(False)
 
 # Set up the argument parser
@@ -28,13 +29,16 @@ parser.add_argument(
 )
 parser.add_argument(
     '-n',
+    '--num-screenshots',
     type=int,
     metavar='<number>',
+    dest='num_screenshots',
     default=config.NUM_SCREENSHOTS,
     help='number of screenshots to save and upload'
 )
 parser.add_argument(
     '-U',
+    '--no-upload',
     dest='upload',
     default=True,
     action='store_false',
@@ -52,9 +56,13 @@ for path in args.file_list:
     try:
 
         screenshots = files.Screenshots(path)
-        screenshots.take()
+        screenshots.take(args.num_screenshots)
         if args.upload:
-            screenshots.upload(image_host)
+            screenshots.upload(
+                image_host=image_host,
+                delete_after_upload=config.DELETE_SCREENS_AFTER_UPLOAD,
+            )
+            logging.info('BBCode:\n' + screenshots.bbcode)
         else:
             for screenshot_path in screenshots.files:
                 logging.info(screenshot_path)
