@@ -21,13 +21,24 @@ import trackers
 import metadata
 from .utils import normalize_title, strings_match, years_match
 
+if sys.version_info[0] >= 3:
+    raw_input = input
+
 
 class Upload(object):
     """
     Represents the preparation and execution of an upload to a Tracker.
     """
 
-    def __init__(self, path, tracker, screens=True):
+    def __init__(
+            self,
+            path,
+            tracker,
+            imdb_link=None,
+            take_screenshots=True,
+            num_screenshots=0,
+            delete_unwanted_files=False
+    ):
 
         assert issubclass(tracker, trackers.BaseTracker)
 
@@ -39,7 +50,9 @@ class Upload(object):
         except files.ReleaseError as e:
             raise UploadInterruptedError(e)
 
-        self.take_screens = screens
+        self.delete_unwanted_files = delete_unwanted_files
+        self.take_screens = take_screenshots
+        self.num_screens = num_screenshots
         self.use_nfo = True
         self.metadata_is_verified = False
         self.technical_is_verified = False
@@ -52,13 +65,17 @@ class Upload(object):
         self.container = None
 
         self.nfo = None
-        self.imdb = None
         self.tmdb = None
         self.film_description = None
         self.mediainfo = None
         self.screenshots = None
         self.torrent = None
         self.bbcode = None
+
+        if imdb_link is None:
+            self.imdb = None
+        else:
+            self.imdb = metadata.IMDb(imdb_link)
 
     def start(self, dry_run=False):
 
@@ -85,7 +102,10 @@ class Upload(object):
         try:
 
             # Extract RAR archives, get rid of unwanted files
-            self.release.clean_up(extension_whitelist=self.tracker.FILE_EXTENSION_WHITELIST)
+            self.release.clean_up(
+                delete_unwanted_files=self.delete_unwanted_files,
+                extension_whitelist=self.tracker.FILE_EXTENSION_WHITELIST
+            )
 
             # Find the video file so we can run mediainfo on it
             self.release.find_video_file()
@@ -99,10 +119,10 @@ class Upload(object):
         self.technical_is_verified = self.verify_technical()
 
         # Take screenshots
-        if self.take_screens:
+        if self.take_screens and self.num_screens > 0:
             try:
                 self.screenshots = files.Screenshots(self.release.video_file)
-                self.screenshots.take()
+                self.screenshots.take(self.num_screens)
                 self.screenshots.upload()
             except files.ScreenshotsError as e:
                 raise UploadInterruptedError(e)
@@ -146,6 +166,9 @@ class Upload(object):
                 return None
 
     def get_imdb_id(self):
+
+        if isinstance(self.imdb, metadata.IMDb):
+            return
 
         imdb_id = self.get_imdb_id_from_nfo()
 
@@ -261,14 +284,17 @@ class Upload(object):
             self.imdb.description,
             'Could not find film description on TMDb or IMDb.'
         ]
-        self.film_description = next(d for d in descriptions if d is not None)
+        self.film_description = next(d for d in descriptions if d is not None and d.strip())
 
     def get_mediainfo(self):
 
         if self.release.path is not None:
             # Get mediainfo, and parse it for codec, container, and resolution
             try:
-                self.mediainfo = metadata.Mediainfo(path=self.release.video_file, base_path=self.release.base_path)
+                self.mediainfo = metadata.Mediainfo(
+                    path=self.release.video_file,
+                    base_path=self.release.base_path
+                )
                 self.mediainfo.parse()
                 self.mediainfo.get_info()
             except metadata.MediainfoError as e:
@@ -298,15 +324,20 @@ class Upload(object):
         elif strings_match(tmdb_title, release_title) and strings_match(imdb_title, tmdb_original_title):
             logging.debug('Release title matches TMDb title, and IMDb title matches TMDb original_title.')
         else:
-            # TODO: ask user to continue assuming IMDb title is correct, retry without IMDb ID, or abort
-            # This could mean the wrong IMDb ID was provided in the NFO file
-            if self.use_nfo is True and self.nfo is not None:
+            msg = 'Release title "{r}" does not match IMDb title "{i}".'
+            logging.warning(msg.format(r=self.release.title, i=self.imdb.title))
+            prompt = '\nIs this the correct IMDb link for the release? (Y/N)  {link}\n'
+            answer = raw_input(prompt.format(link=self.imdb))
+            print()
+            if answer.lower() == 'y':
+                logging.debug('Assuming IMDb title is correct')
+            elif self.use_nfo is True and self.nfo is not None:
+                # This could mean the wrong IMDb ID was provided in the NFO file
                 self.use_nfo = False
                 self.get_metadata()
                 return self.verify_metadata()
             else:
-                msg = 'Release title "{r}" does not match IMDb title "{i}".'
-                raise UploadInterruptedError(msg.format(r=self.release.title, i=self.imdb.title))
+                raise UploadInterruptedError('User aborted upload')
 
         # Check to make sure the release year and the year from IMDb match
         if self.release.year is None:
@@ -370,7 +401,9 @@ class Upload(object):
         self.bbcode = ''
 
         if self.screenshots is not None and self.screenshots.uploaded is True:
+            self.bbcode += '[center][spoiler=Screenshots]'
             self.bbcode += self.screenshots.bbcode
+            self.bbcode += '[/spoiler][/center]\n'
 
         if self.nfo is not None:
             self.bbcode += self.nfo.bbcode

@@ -20,6 +20,8 @@ import config
 import files
 
 
+tracker = trackers.TehConnection
+
 # Set up the argument parser
 parser = argparse.ArgumentParser(description='Auto uploads film releases to a BitTorrent tracker.')
 parser.add_argument(
@@ -30,9 +32,15 @@ parser.add_argument(
     help='file or directory containing the release'
 )
 parser.add_argument(
-    '--no-upload',
+    '--imdb',
+    default=None,
+    help='manually specify the IMDb ID or URL for the release(s) you are uploading',
+)
+parser.add_argument(
+    '--dry-run',
     dest='dry_run',
     action='store_true',
+    default=False,
     help='do a dry run -- everything except posting the upload form to the tracker'
 )
 parser.add_argument(
@@ -43,10 +51,19 @@ parser.add_argument(
 )
 parser.add_argument(
     '-n',
+    '--num-screenshots',
     type=int,
     metavar='<number>',
+    dest='num_screenshots',
     default=config.NUM_SCREENSHOTS,
     help='number of screenshots to save and upload'
+)
+parser.add_argument(
+    '-d',
+    '--delete-unwanted-files',
+    dest='delete_unwanted_files',
+    action='store_true',
+    default=config.DELETE_UNWANTED_FILES
 )
 args = parser.parse_args()
 
@@ -58,19 +75,29 @@ if len(release_list) == 0:
     logging.critical('You must give this script at least one file or directory to process!')
     sys.exit(1)
 
-tracker = trackers.TehConnection
-
 for path in release_list:
 
     # Log exceptions but don't raise them; just continue
+
     try:
 
         config.set_log_file_name(os.path.basename(path) + '.log')
-        upload = uploads.Upload(path=path, tracker=tracker, screens=args.take_screens)
+        upload = uploads.Upload(
+            path=path,
+            tracker=tracker,
+            imdb_link=args.imdb,
+            take_screenshots=args.take_screens,
+            num_screenshots=args.num_screenshots,
+            delete_unwanted_files=args.delete_unwanted_files,
+        )
+
         logging.info('------------------------------------------------------------')
         logging.info(upload.release.name)
         logging.info('------------------------------------------------------------')
-        upload.start(dry_run=args.dry_run)
+
+        upload.start(
+            dry_run=args.dry_run,
+        )
 
     except uploads.UploadInterruptedError as e:
 
