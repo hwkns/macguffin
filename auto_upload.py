@@ -27,9 +27,9 @@ parser = argparse.ArgumentParser(description='Auto uploads film releases to a Bi
 parser.add_argument(
     'file_list',
     type=str,
-    metavar='video-file',
+    metavar='release-path',
     nargs='+',
-    help='file or directory containing the release'
+    help='file or directory containing the release',
 )
 parser.add_argument(
     '--imdb',
@@ -41,7 +41,7 @@ parser.add_argument(
     dest='dry_run',
     action='store_true',
     default=False,
-    help='do a dry run -- everything except posting the upload form to the tracker'
+    help='do a dry run -- everything except posting the upload form to the tracker',
 )
 parser.add_argument(
     '--no-screens',
@@ -56,14 +56,15 @@ parser.add_argument(
     metavar='<number>',
     dest='num_screenshots',
     default=config.NUM_SCREENSHOTS,
-    help='number of screenshots to save and upload'
+    help='number of screenshots to save and upload',
 )
 parser.add_argument(
     '-d',
     '--delete-unwanted-files',
     dest='delete_unwanted_files',
     action='store_true',
-    default=config.DELETE_UNWANTED_FILES
+    default=config.DELETE_UNWANTED_FILES,
+    help='delete files that are not whitelisted by the tracker (such as .rar files)',
 )
 args = parser.parse_args()
 
