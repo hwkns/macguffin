@@ -244,6 +244,11 @@ class Release(object):
 
                 if file_name.endswith('.rar'):
 
+                    # Ignore .part##.rar files, except for the first one
+                    match = re.match(r'(.*)\.part(\d+)\.rar$', file_name, re.IGNORECASE)
+                    if match and int(match.group(2)) != 1:
+                        continue
+
                     # Sort out absolute and release-relative paths
                     rar_file_path = os.path.join(dir_path, file_name)
                     sub_path = re.sub(self.path, '', dir_path)
