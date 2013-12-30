@@ -1,5 +1,6 @@
 from __future__ import print_function, unicode_literals, division, absolute_import
 import os
+import sys
 import logging
 
 
@@ -75,7 +76,7 @@ def set_log_file_name(file_name):
 
     # Configure console logging
     console_log_format = logging.Formatter('%(module)-15s: %(levelname)-8s %(message)s')
-    console_log_handler = logging.StreamHandler()
+    console_log_handler = logging.StreamHandler(sys.stdout)
     console_log_handler.setFormatter(console_log_format)
     console_log_handler.setLevel(logging.INFO)
     logger.addHandler(console_log_handler)
