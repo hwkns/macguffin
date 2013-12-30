@@ -67,7 +67,7 @@ class IMDb(object):
         except requests.RequestException as e:
             raise IMDbError(e)
 
-        return BeautifulSoup(response.text, 'lxml')
+        return BeautifulSoup(response.text)
 
     def get_metadata(self):
         """

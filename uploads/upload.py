@@ -77,6 +77,10 @@ class Upload(object):
         else:
             self.imdb = metadata.IMDb(imdb_link)
 
+    def __repr__(self):
+        text = 'Upload to {tracker} in progress: "{release}"'
+        return text.format(tracker=self.tracker, release=self.release)
+
     def start(self, dry_run=False):
 
         # Find the NFO file, if it exists
@@ -205,10 +209,9 @@ class Upload(object):
             'ttype': 'ft'
 
         }
-        url = 'http://www.imdb.com/find'
-        response = requests.get(url, params=params)
+        response = requests.get('http://www.imdb.com/find', params=params)
         response.raise_for_status()
-        dom = BeautifulSoup(response.text, 'lxml')
+        dom = BeautifulSoup(response.text)
         first_result = dom.find('tr', attrs={'class': 'findResult'})
         if first_result is not None:
             imdb_link = first_result.a.get('href').strip()
@@ -231,8 +234,7 @@ class Upload(object):
             'btnI': ''
 
         }
-        url = 'http://www.google.com/search'
-        response = requests.get(url, params=params)
+        response = requests.get('http://www.google.com/search', params=params)
         response.raise_for_status()
 
         try:

@@ -82,14 +82,14 @@ class TMDB(object):
 
     def get_id_by_imdb(self, imdb_id):
 
-        msg = 'Searching TMDB using IMDb ID "{id}"'
-        logging.debug(msg.format(id=imdb_id))
+        msg = 'Searching {site} using IMDb ID "{id}"'
+        logging.debug(msg.format(site=self, id=imdb_id))
 
         response = self.request('movie/' + imdb_id)
 
         if not response:
-            msg = 'Could not find film with IMDb ID "{id}"'
-            raise TMDBError(msg.format(id=imdb_id))
+            msg = '{site} could not find film with IMDb ID "{id}"'
+            raise TMDBError(msg.format(site=self, id=imdb_id))
 
         return response['id']
 
