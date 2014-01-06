@@ -15,14 +15,14 @@ import config
 
 image_host = image_hosts.ImageBam
 
-config.set_log_file_name(False)
+config.set_log_file_name('screenshots.log')
 
 # Set up the argument parser
 parser = argparse.ArgumentParser(description='Takes screenshots of one or more video files, '
                                              'and uploads them to an image host.')
 parser.add_argument(
     'file_list',
-    type=str,
+    type=bytes,
     metavar='video-file',
     nargs='+',
     help='file or directory containing the release'
@@ -45,6 +45,9 @@ parser.add_argument(
     help='do not upload; save screenshots and exit'
 )
 args = parser.parse_args()
+
+# Translate path strings into unicode
+args.file_list = [path.decode('utf-8') for path in args.file_list]
 
 
 for path in args.file_list:
