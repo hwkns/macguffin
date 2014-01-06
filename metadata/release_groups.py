@@ -177,6 +177,7 @@ scene_groups = {
     'MaxHD',
     'MCHD',
     'MELiTE',
+    'METH',
     'METiS',
     'MHD',
     'MHQ',
