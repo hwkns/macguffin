@@ -209,11 +209,11 @@ class TehConnection(BaseTracker):
 
     def take_upload(self, upload, dry_run=False):
 
-        # Banned container check, banned release group check
-        self.check_upload(upload)
-
         # Generate torrent description
         upload.torrent_description = self.generate_bbcode(upload)
+
+        # Banned container check, banned release group check
+        self.check_upload(upload)
 
         # Try to use a genre as the category; otherwise, use "Musical"
         category = None
