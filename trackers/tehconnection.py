@@ -188,20 +188,32 @@ class TehConnection(BaseTracker):
             raise TrackerError(msg.format(error=response_json['error']))
         possible_dupes = response_json['releases']
 
-        for dupe in possible_dupes:
-            msg = 'Possible dupe : {release_name} : {url}'
-            logging.warning(msg.format(release_name=dupe['name'], url=dupe['url']))
-            answer = raw_input('\nDo you want to continue? (Y/N)\n')
-            print()
-            if answer.lower() != 'y':
-                raise TrackerError('User aborted upload')
-
         return possible_dupes
+
+    @staticmethod
+    def generate_bbcode(upload):
+
+        bbcode = ''
+
+        if upload.screenshots is not None and upload.screenshots.uploaded is True:
+            bbcode += '[center][spoiler=Screenshots]'
+            bbcode += upload.screenshots.bbcode
+            bbcode += '[/spoiler][/center]\n'
+
+        if upload.nfo is not None:
+            bbcode += '[spoiler=NFO][size=2][pre]'
+            bbcode += upload.nfo.text
+            bbcode += '[/pre][/size][/spoiler]\n'
+
+        return bbcode
 
     def take_upload(self, upload, dry_run=False):
 
         # Banned container check, banned release group check
         self.check_upload(upload)
+
+        # Generate torrent description
+        upload.torrent_description = self.generate_bbcode(upload)
 
         # Try to use a genre as the category; otherwise, use "Musical"
         category = None
@@ -270,7 +282,7 @@ class TehConnection(BaseTracker):
             'mediainfo': upload.mediainfo.text,
 
             # Release description (screenshots, NFO)
-            'release_desc': upload.bbcode
+            'release_desc': upload.torrent_description
         }
 
         for genre in upload.imdb.genres:

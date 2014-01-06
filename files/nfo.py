@@ -2,6 +2,7 @@ from __future__ import print_function, unicode_literals, division, absolute_impo
 import os
 import io
 import codecs
+import logging
 
 byte_order_mark_codecs = {
     codecs.BOM_UTF8: 'utf-8-sig',
@@ -21,27 +22,28 @@ class NFO(object):
         assert os.path.isfile(path)
         self.path = os.path.abspath(path)
         self.bbcode = ''
+
+        # Set default encoding to CP437
         self.codec = 'cp437'
 
-        # Assume CP-437 encoding and read in the file
+        # Read in the file as bytes
         with io.open(self.path, mode='rb') as nfo_file:
             nfo_bytes = nfo_file.read()
 
+        # Look for a BOM at the beginning of the file
         for (bom, codec) in byte_order_mark_codecs.items():
             if nfo_bytes.startswith(bom):
+                msg = 'Found BOM for {codec} in NFO.'
+                logging.debug(msg.format(codec=codec))
                 self.codec = codec
                 break
 
+        # Decode NFO contents
         try:
             self.text = nfo_bytes.decode(encoding=self.codec)
         except UnicodeDecodeError:
             msg = 'Could not decode NFO file with codec {codec}'
             raise NFOError(msg.format(codec=self.codec))
-
-        # Generate BBCode
-        self.bbcode += '[spoiler=NFO][size=2][pre]'
-        self.bbcode += self.text
-        self.bbcode += '[/pre][/size][/spoiler]\n'
 
 
 class NFOError(Exception):

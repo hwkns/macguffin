@@ -70,7 +70,7 @@ class Upload(object):
         self.mediainfo = None
         self.screenshots = None
         self.torrent = None
-        self.bbcode = None
+        self.torrent_description = None
 
         if imdb_link is None:
             self.imdb = None
@@ -98,10 +98,15 @@ class Upload(object):
 
         # Check the tracker for dupes
         if self.release.torrent_group_id is not None:
-            try:
-                dupes = self.tracker.dupe_check(self.release)
-            except trackers.TrackerError as e:
-                raise UploadInterruptedError(e)
+            possible_dupes = self.tracker.dupe_check(self.release)
+            for dupe in possible_dupes:
+                msg = 'Possible dupe : {release_name} : {url}'
+                logging.warning(msg.format(release_name=dupe['name'], url=dupe['url']))
+                print('\nDo you want to continue? (Y/N)')
+                answer = raw_input()
+                print()
+                if answer.lower() != 'y':
+                    raise UploadInterruptedError('User aborted upload')
 
         try:
 
@@ -132,9 +137,6 @@ class Upload(object):
                 raise UploadInterruptedError(e)
         else:
             logging.info('Skipping screenshots')
-
-        # Prepare the upload description
-        self.generate_bbcode()
 
         # Make the .torrent file
         try:
@@ -398,18 +400,6 @@ class Upload(object):
 
         # All checks passed
         return True
-
-    def generate_bbcode(self):
-
-        self.bbcode = ''
-
-        if self.screenshots is not None and self.screenshots.uploaded is True:
-            self.bbcode += '[center][spoiler=Screenshots]'
-            self.bbcode += self.screenshots.bbcode
-            self.bbcode += '[/spoiler][/center]\n'
-
-        if self.nfo is not None:
-            self.bbcode += self.nfo.bbcode
 
 
 class UploadInterruptedError(Exception):

@@ -128,7 +128,7 @@ class BaseTracker(object):
         assert upload.technical_is_verified
         assert upload.mediainfo is not None
         assert upload.torrent is not None
-        assert upload.bbcode is not None
+        assert upload.torrent_description is not None
         assert upload.title is not None
         assert upload.film_description is not None
         assert upload.source is not None
@@ -165,6 +165,9 @@ class BaseTracker(object):
     def dupe_check(self, release):
         """
         Ask the tracker for any similar releases that already exist.
+
+        Possible dupes should be returned as a list of
+        dictionaries, with values for the keys 'name' and 'url'.
         """
         return []
 
