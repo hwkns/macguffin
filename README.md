@@ -25,7 +25,6 @@ Installation
 - `sudo apt-get install unrar ffmpeg ffprobe mediainfo python-pip`
 - `sudo pip install requests beautifulsoup4`
 - [Download](https://github.com/hwkns/macguffin/archive/master.zip) or `git clone` this project's files
--
 - Edit config.py with your details
   - If you don't already have an API key from [TMDB](http://www.themoviedb.org), just
     [sign up](https://www.themoviedb.org/account/signup) and request one from your
