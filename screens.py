@@ -15,7 +15,7 @@ import config
 
 image_host = image_hosts.ImageBam
 
-config.set_log_file_name('screenshots.log')
+files.set_log_file_name('screenshots.log')
 
 # Set up the argument parser
 parser = argparse.ArgumentParser(description='Takes screenshots of one or more video files, '

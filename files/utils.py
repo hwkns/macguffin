@@ -1,5 +1,6 @@
 from __future__ import print_function, unicode_literals, division, absolute_import
 import os
+import sys
 import string
 import random
 import hashlib
@@ -140,6 +141,44 @@ def sha1(data):
     sha1_hash = hashlib.sha1()
     sha1_hash.update(data)
     return sha1_hash.digest()
+
+
+def set_log_file_name(file_name):
+    """
+    Set the file name for log output.
+    """
+
+    # Remove all logging handlers from the root logger
+    logger = logging.getLogger('')
+    for handler in list(logger.handlers):
+        logger.removeHandler(handler)
+        handler.flush()
+        handler.close()
+
+    # Configure console logging
+    console_log_format = logging.Formatter('%(module)-15s: %(levelname)-8s %(message)s')
+    console_log_handler = logging.StreamHandler(sys.stdout)
+    console_log_handler.setFormatter(console_log_format)
+    console_log_handler.setLevel(logging.INFO)
+    logger.addHandler(console_log_handler)
+
+    # Configure disk logging
+    if file_name:
+        log_path = os.path.join(config.LOG_DIR, file_name)
+        disk_log_format = logging.Formatter('%(asctime)s %(module)-15s: %(levelname)-8s %(message)s')
+        disk_log_handler = logging.FileHandler(filename=log_path, mode='w', encoding='utf-8')
+        disk_log_handler.setFormatter(disk_log_format)
+        disk_log_handler.setLevel(logging.DEBUG)
+        logger.addHandler(disk_log_handler)
+    logger.setLevel(logging.DEBUG)
+
+    # Set logging level for the requests lib to warning+
+    requests_log = logging.getLogger('requests')
+    requests_log.setLevel(logging.WARNING)
+
+    # Log system info and Python version for debugging purposes
+    logging.debug('Python {version}'.format(version=sys.version))
+    logging.debug('System platform: {platform}'.format(platform=sys.platform))
 
 
 class FileUtilsError(Exception):

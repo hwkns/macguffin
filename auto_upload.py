@@ -82,7 +82,7 @@ for path in release_list:
 
     try:
 
-        config.set_log_file_name(os.path.basename(path) + '.log')
+        files.set_log_file_name(os.path.basename(path) + '.log')
         upload = uploads.Upload(
             path=path,
             tracker=tracker,
