@@ -307,7 +307,7 @@ class Release(object):
             self.size = os.path.getsize(self.path)
             if self.video_file.endswith('.mkv'):
                 self.container = metadata.Containers.MKV
-            elif self.video_file.endswith('mp4'):
+            elif self.video_file.endswith('.mp4'):
                 self.container = metadata.Containers.MP4
             elif self.video_file.endswith('.avi'):
                 self.container = metadata.Containers.AVI
@@ -427,7 +427,11 @@ class ReleaseError(Exception):
 
 
 # Whitelist for video file extensions (used for single file releases)
-VIDEO_EXTENSION_WHITELIST = ('.mkv', 'mp4', '.avi')
+VIDEO_EXTENSION_WHITELIST = (
+    '.mkv',
+    '.mp4',
+    '.avi',
+)
 
 
 # Regular expressions for parsing the release name
