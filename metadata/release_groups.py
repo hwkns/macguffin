@@ -150,6 +150,7 @@ scene_groups = {
     'iLLUSiON',
     'iLS',
     'iMBT',
+    'iMMORTALs',
     'iNCiTE',
     'iND',
     'iNFAMOUS',
