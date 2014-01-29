@@ -296,6 +296,12 @@ class TehConnection(BaseTracker):
 
         if upload.release.is_scene:
             data['scene'] = 'true'
+            if '.PROPER.' in upload.release.name:
+                data['scenetitle'] = 'Proper'
+            elif '.REPACK.' in upload.release.name:
+                data['scenetitle'] = 'Repack'
+            elif 'RERiP' in upload.release.name:
+                data['scenetitle'] = 'Rerip'
 
         msg = 'Uploading {release} to {site}'
         logging.info(msg.format(release=upload.release, site=self))
