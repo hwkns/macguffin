@@ -1,8 +1,10 @@
 MacGuffin
 =========
 
-Automated tools for handling Scene and P2P film releases -- gather and verify metadata, take
-screenshots and upload them to an image host, create a .torrent file and upload it to a BitTorrent tracker.
+Automated tools for handling Scene and P2P film releases:
+- Gather and verify metadata
+- Take screenshots and upload them to an image host
+- Create a .torrent file and upload it to a BitTorrent tracker
 
 
 Requirements
