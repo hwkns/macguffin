@@ -20,20 +20,13 @@ import config
 import files
 
 
-# Snippet from the `six` library to help with Python3 compatibility
-if sys.version_info[0] == 3:
-    text_type = str
-else:
-    text_type = unicode
-
-
 tracker = trackers.TehConnection
 
 # Set up the argument parser
 parser = argparse.ArgumentParser(description='Auto uploads film releases to a BitTorrent tracker.')
 parser.add_argument(
     'file_list',
-    type=text_type,
+    type=bytes,
     metavar='release-path',
     nargs='+',
     help='file or directory containing the release',
@@ -89,6 +82,7 @@ for path in release_list:
 
     try:
 
+        path = path.decode('utf-8')
         files.set_log_file_name(os.path.basename(path) + '.log')
         upload = uploads.Upload(
             path=path,
