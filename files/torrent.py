@@ -12,6 +12,7 @@ import io
 import trackers
 import files
 
+
 KB = 1024
 MB = 1048576
 GB = 1073741824
@@ -21,23 +22,17 @@ class Torrent(object):
 
     def __init__(self, release, tracker):
 
+        self.release = release
+        self.tracker = tracker
+
+        assert isinstance(self.tracker, trackers.BaseTracker)
+
         if release.size == 0:
             raise TorrentError('Cannot make torrent; release size is zero bytes!')
 
-        # Set piece size based on release size
-        if release.size >= (15 * GB):
-            self.piece_size = (8 * MB)
-        elif release.size >= (7 * GB):
-            self.piece_size = (4 * MB)
-        elif release.size >= (3 * GB):
-            self.piece_size = (2 * MB)
-        else:
-            self.piece_size = (1 * MB)
-
-        assert isinstance(tracker, trackers.BaseTracker)
-        self.announce_url = tracker.announce_url
-        self.extension_whitelist = tracker.FILE_EXTENSION_WHITELIST
-        self.release = release
+        self.piece_size = self._select_piece_size(self.release.size)
+        self.announce_url = self.tracker.announce_url
+        self.extension_whitelist = self.tracker.FILE_EXTENSION_WHITELIST
 
         file_name = '{name}.torrent'.format(name=self.release.name)
         tmp = tempfile.gettempdir()
@@ -58,6 +53,24 @@ class Torrent(object):
             f.write(bencoded_metainfo)
 
         logging.info('Torrent created successfully.')
+
+    @staticmethod
+    def _select_piece_size(size):
+        """
+        Pick a reasonable piece size, based on the size of the file(s)
+        """
+
+        if size >= (15 * GB):
+            return 8 * MB
+
+        elif size >= (7 * GB):
+            return 4 * MB
+
+        elif size >= (3 * GB):
+            return 2 * MB
+
+        else:
+            return 1 * MB
 
     def move_to(self, destination):
 
@@ -82,20 +95,41 @@ class Torrent(object):
         self.path = new_path
 
     def _create_metainfo_dict(self, include_md5_sum=True):
-        if os.path.isfile(self.release.path):
-            info = self._create_file_info_dict(self.release.path, self.piece_size, include_md5_sum)
-        elif os.path.isdir(self.release.path):
-            info = self._create_directory_info_dict(self.release.path, self.piece_size, include_md5_sum)
-        else:
-            raise TorrentError('"{path}" is not a file or directory!'.format(path=self.release.path))
 
+        if os.path.isfile(self.release.path):
+            info = self._create_file_info_dict(
+                file_path=self.release.path,
+                piece_size=self.piece_size,
+                include_md5_sum=include_md5_sum,
+            )
+
+        elif os.path.isdir(self.release.path):
+            info = self._create_directory_info_dict(
+                root_dir_path=self.release.path,
+                piece_size=self.piece_size,
+                include_md5_sum=include_md5_sum,
+            )
+
+        else:
+            raise TorrentError(
+                '"{path}" is not a file or directory!'.format(
+                    path=self.release.path
+                )
+            )
+
+        # Make this torrent private
         info['private'] = 1
+
+        # Make the info hash unique to this tracker, to avoid
+        # any cross-seeding issues
+        info['created for'] = repr(self.tracker)
+
         metainfo = {
             'info':           info,
             'announce':       self.announce_url,
             'creation date':  int(time.time()),
             'created by':     'MacGuffin',
-            'comment':        'Created with MacGuffin',
+            'comment':        'https://github.com/hwkns/macguffin',
         }
 
         msg = 'Torrent metainfo dictionary:\n{metainfo}'
@@ -206,7 +240,11 @@ class Torrent(object):
                 # Keep track of the file's MD5 sum
                 md5 = hashlib.md5() if include_md5_sum else None
 
-                logging.info('Hashing file "{path}"... '.format(path=os.path.relpath(file_path, root_dir_path)))
+                logging.info(
+                    'Hashing file "{path}"... '.format(
+                        path=os.path.relpath(file_path, root_dir_path)
+                    )
+                )
 
                 file_pieces = create_piece_generator(file_path, piece_size)
                 for piece in file_pieces:
