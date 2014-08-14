@@ -4,6 +4,7 @@ import logging
 import hashlib
 import shutil
 import pprint
+import math
 import time
 import os
 import io
@@ -178,8 +179,9 @@ class Torrent(object):
         # Concatenated 20-byte SHA-1 hashes of all the torrent's pieces.
         info_pieces = bytearray()
 
-        # This bytearray will be used for the calculation of info_pieces. Consecutive files will be
-        # written into data_buffer as a continuous stream, as required by the BitTorrent specification.
+        # This bytearray will be used for the calculation of info_pieces.
+        # Consecutive files will be written into data_buffer as a continuous
+        # stream, as required by the BitTorrent specification.
         data_buffer = bytearray()
 
         file_dicts = []
@@ -242,13 +244,11 @@ def create_piece_generator(file_path, piece_size):
 
     # Find the number of pieces in the file
     file_size = os.path.getsize(file_path)
-    num_pieces = file_size // piece_size
-    if file_size % piece_size != 0:
-        num_pieces += 1
+    num_pieces = math.ceil(file_size / piece_size)
 
     # Yield pieces
     with io.open(file_path, mode='rb') as f:
-        for i in range(num_pieces):
+        for __ in range(num_pieces):
             yield f.read(piece_size)
 
 
