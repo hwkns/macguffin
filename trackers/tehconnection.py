@@ -7,7 +7,10 @@ import io
 try:
     from bs4 import BeautifulSoup
 except ImportError:
-    logging.critical('You must install "beautifulsoup4" for this script to work.  Try "pip install beautifulsoup4".')
+    logging.critical(
+        'You must install "beautifulsoup4" for this script to work.  '
+        'Try "pip install beautifulsoup4".'
+    )
     sys.exit(1)
 
 from .tracker import BaseTracker, TrackerError
@@ -173,7 +176,7 @@ class TehConnection(BaseTracker):
             'action': 'dupe_check',
             'group': release.torrent_group_id,
             'scene': 1 if release.is_scene else 0,
-            'resolution': release.resolution,
+            'resolution': 'Standard Def' if release.resolution == '480p' else release.resolution,
             'codec': self.CODEC_STRING[release.codec]
         }
 
