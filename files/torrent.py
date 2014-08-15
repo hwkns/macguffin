@@ -282,7 +282,7 @@ def create_piece_generator(file_path, piece_size):
 
     # Find the number of pieces in the file
     file_size = os.path.getsize(file_path)
-    num_pieces = math.ceil(file_size / piece_size)
+    num_pieces = int(math.ceil(file_size / piece_size))
 
     # Yield pieces
     with io.open(file_path, mode='rb') as f:
