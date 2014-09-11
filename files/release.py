@@ -400,7 +400,7 @@ def get_resolution(release_name):
     if not resolution:
         return None
     else:
-        return resolution.group().strip('.').strip('-')
+        return resolution.group().strip('.').strip('-').lower()
 
 
 def get_group(release_name):
