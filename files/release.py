@@ -439,7 +439,7 @@ NON_TITLE_REGEX = re.compile(r'\.(?:\(?(?:19|20)[0-9]{2}\)?|480p|576p|720p|1080p
 YEAR_REGEX = re.compile(r'\.(\(?(?:19|20)[0-9]{2}\)?)(\.|\-|$)')
 SOURCE_REGEX = re.compile(r'\.(NTSC|PAL|R[56C]|TS|CAM|TELESYNC|SCREENER|DVDSCR|BDRip|Blu\-?Ray|HDDVD|DVDRip|DVDR?|HDTV|WEB-DL|WEBRip|DTheater|TVRip)(\.|\-|$)', re.IGNORECASE)
 FORMAT_REGEX = re.compile(r'\.(XViD|x264|DVDR|VIDEO_TS|H\.?264|MPEG2|AVC)(\-|\.|$)', re.IGNORECASE)
-RESOLUTION_REGEX = re.compile(r'\.(1080p|1080i|720p|480p|576p)(\.|\-|$)')
+RESOLUTION_REGEX = re.compile(r'\.(1080p|1080i|720p|480p|576p)(\.|\-|$)', re.IGNORECASE)
 GROUP_REGEX = re.compile(r'\-([^\.]*)$')
 
 
