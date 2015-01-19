@@ -369,7 +369,7 @@ class Upload(object):
         h = self.mediainfo.height
         resolution = self.release.resolution
         if (
-            (0 < h <= 576 and 0 < w <= 1024 and resolution != 'Standard Def')
+            (0 < h <= 576 and 0 < w <= 1024 and resolution not in ('Standard Def', '480p', '576p'))
             or (576 < h <= 720 and 1024 < w <= 1280 and resolution != '720p')
             or (720 < h <= 1080 and 1280 < w <= 1920 and resolution != '1080p')
             or (h > 1080 or w > 1920)
