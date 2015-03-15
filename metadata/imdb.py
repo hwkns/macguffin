@@ -105,7 +105,7 @@ class IMDb(object):
 
         # Get year
         for span in header_spans:
-            match = re.search(r'\(((?:19|20)[0-9]{2})\)', span.get_text())
+            match = re.search(r'\(.*((?:19|20)[0-9]{2}).*\)', span.get_text())
             if match is not None:
                 self.year = match.group(1)
         msg = 'Year: {year}'
