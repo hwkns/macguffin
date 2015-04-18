@@ -190,6 +190,7 @@ scene_groups = {
     'MULTiPLY',
     'nDn',
     'NeDiVx',
+    'NewMov',
     'NEPTUNE',
     'NGB',
     'NiLE',
