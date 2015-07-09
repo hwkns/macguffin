@@ -3,6 +3,7 @@ import sys
 
 if sys.version_info[0] >= 3:
     unicode = str
+    long = int
 
 
 def _bytes(some_str):
@@ -44,7 +45,7 @@ def bencode(thing):
 
     @rtype: bytes
     """
-    if isinstance(thing, int):
+    if isinstance(thing, (int, long)):
         result = _bytes('i{thing}e'.format(thing=thing))
 
     elif isinstance(thing, unicode):
