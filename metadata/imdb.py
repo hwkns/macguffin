@@ -87,35 +87,30 @@ class IMDb(object):
 
         dom = self._fetch_page()
 
-        # Starting point
-        overview_top = dom.find('td', id='overview-top')
-        header_spans = overview_top.h1.find_all('span')
-
         # Get genres
-        info_div = overview_top.find('div', class_='infobar')
-        self.genres = [span.string.strip() for span in info_div.find_all('span', itemprop='genre')]
+        subtext_div = dom.find('div', class_='subtext')
+        self.genres = [span.string.strip() for span in subtext_div.find_all('span', itemprop='genre')]
         msg = 'Genre(s): {genres}'
         logging.info(msg.format(genres=', '.join(self.genres)))
 
         # Get title
-        title_span = header_spans[0]
-        self.title = title_span.string.strip()
+        title_h1 = dom.find('h1', itemprop='name')
+        self.title = next(title_h1.children).strip()
         msg = 'Title: {title}'
         logging.debug(msg.format(title=self.title))
 
         # Get year
-        for span in header_spans:
-            match = re.search(r'\(.*((?:19|20)[0-9]{2}).*\)', span.get_text())
-            if match is not None:
-                self.year = match.group(1)
+        year_span = dom.find('span', id='titleYear')
+        year_link = year_span.find('a')
+        self.year = year_link.string.strip()
         msg = 'Year: {year}'
         logging.debug(msg.format(year=self.year))
 
         # Get description
         if self.description is None:
-            description_node = dom.find('p', itemprop='description')
-            if description_node is not None:
-                self.description = description_node.text.strip()
+            description_div = dom.find(class_='summary_text', itemprop='description')
+            if description_div is not None:
+                description_div.string.strip()
 
     def get_plotsummary_metadata(self):
 
