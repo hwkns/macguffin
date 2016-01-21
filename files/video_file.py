@@ -50,7 +50,7 @@ class VideoFile(object):
             msg = 'Could not get duration from mediainfo: {error_string}'
             raise VideoFileError(msg.format(error_string=e.output.decode(encoding='utf-8')))
         else:
-            duration = int(output.decode(encoding='utf-8'))
+            duration = int(float(output.decode(encoding='utf-8')))
 
         duration /= float(1000)
         msg = 'Video duration: {n} seconds'
