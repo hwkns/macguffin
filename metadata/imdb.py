@@ -110,7 +110,7 @@ class IMDb(object):
         if self.description is None:
             description_div = dom.find(class_='summary_text', itemprop='description')
             if description_div is not None:
-                description_div.string.strip()
+                self.description = description_div.string.strip()
 
     def get_plotsummary_metadata(self):
 
