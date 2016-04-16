@@ -1,10 +1,12 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 """
 Takes screenshots of a set of video files, and uploads them to an image host.
 """
 
 from __future__ import print_function, unicode_literals, division, absolute_import
+
 import logging
 import argparse
 import os
@@ -22,7 +24,7 @@ parser = argparse.ArgumentParser(description='Takes screenshots of one or more v
                                              'and uploads them to an image host.')
 parser.add_argument(
     'file_list',
-    type=bytes,
+    type=str,
     metavar='video-file',
     nargs='+',
     help='file or directory containing the release'
@@ -46,12 +48,11 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
-# Translate path strings into unicode
-args.file_list = [path.decode('utf-8') for path in args.file_list]
-
 
 for path in args.file_list:
 
+    if isinstance(path, bytes):
+        path = path.decode('utf-8')
     logging.info('------------------------------------------------------------')
     logging.info(os.path.basename(path))
     logging.info('------------------------------------------------------------')

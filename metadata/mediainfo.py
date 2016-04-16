@@ -1,4 +1,7 @@
+# -*- coding: utf-8 -*-
+
 from __future__ import print_function, unicode_literals, division, absolute_import
+
 import re
 import os
 import logging
@@ -34,7 +37,7 @@ class Mediainfo(object):
                 assert os.path.isdir(base_path)
 
                 # First, cd to the base path; then we'll run mediainfo using the relative path
-                command = 'cd "{dir}"; '.format(dir=base_path)
+                command = 'cd "{dir}" && '.format(dir=base_path)
                 relative_path = os.path.relpath(path, base_path)
 
             else:

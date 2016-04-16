@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 """
 Auto uploads film releases to a BitTorrent tracker.
@@ -9,6 +10,7 @@ Compatible with Python 2.7, 3.2, and 3.3.
 """
 
 from __future__ import print_function, unicode_literals, division, absolute_import
+
 import argparse
 import logging
 import sys
@@ -26,7 +28,7 @@ tracker = trackers.TehConnection
 parser = argparse.ArgumentParser(description='Auto uploads film releases to a BitTorrent tracker.')
 parser.add_argument(
     'file_list',
-    type=bytes,
+    type=str,
     metavar='release-path',
     nargs='+',
     help='file or directory containing the release',
@@ -82,7 +84,8 @@ for path in release_list:
 
     try:
 
-        path = path.decode('utf-8')
+        if isinstance(path, bytes):
+            path = path.decode('utf-8')
         files.set_log_file_name(os.path.basename(path) + '.log')
         upload = uploads.Upload(
             path=path,

@@ -106,7 +106,7 @@ class TehConnection(BaseTracker):
         """
 
         # Send a HEAD request to upload.php to see if we're already logged in
-        response = self.request('upload.php', method='HEAD', verify=False, allow_redirects=False)
+        response = self.request('upload.php', method='HEAD', allow_redirects=False)
         if response.status_code == 200:
             return True
 
@@ -120,7 +120,7 @@ class TehConnection(BaseTracker):
             'password': config.TC_PASSWORD,
             'username': config.TC_USERNAME,
         }
-        response = self.request('login.php', method='POST', data=post_data, verify=True)
+        response = self.request('login.php', method='POST', data=post_data)
 
         # If we didn't get redirected, something went wrong
         if not response.history:
@@ -147,7 +147,7 @@ class TehConnection(BaseTracker):
             'action': 'get_group',
             'imdb': imdb_object.int_id
         }
-        response = self.request('upload.php', params=params, verify=False)
+        response = self.request('upload.php', params=params)
         response_json = response.json()
 
         if response_json['status'] == 'error':
@@ -183,7 +183,7 @@ class TehConnection(BaseTracker):
         msg = 'Checking for dupes using {params}'
         logging.debug(msg.format(params=params))
 
-        response = self.request('upload.php', params=params, verify=False)
+        response = self.request('upload.php', params=params)
         response_json = response.json()
 
         if response_json['status'] == 'error':
@@ -240,7 +240,7 @@ class TehConnection(BaseTracker):
         params = {
             'id': upload.imdb.int_id
         }
-        self.request('imdb.php', params=params, verify=False)
+        self.request('imdb.php', params=params)
 
         torrent_file = {
             'file_input': io.open(upload.torrent.path, mode='rb')
@@ -318,7 +318,7 @@ class TehConnection(BaseTracker):
         else:
 
             # Post the upload form
-            response = self.request('upload.php', method=b'POST', data=data, files=torrent_file, verify=False)
+            response = self.request('upload.php', method='POST', data=data, files=torrent_file)
 
             if not response.history:
 
