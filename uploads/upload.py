@@ -331,7 +331,7 @@ class Upload(object):
             msg = 'Release title "{r}" does not match IMDb title "{i}".'
             logging.warning(msg.format(r=self.release.title, i=self.imdb.title))
             prompt = '\nIs this the correct IMDb link for the release? (Y/N)  {link}'
-            logging.info(prompt.format(link=self.imdb))
+            print(prompt.format(link=self.imdb.link))
             answer = raw_input()
             print()
             if answer.lower() == 'y':
