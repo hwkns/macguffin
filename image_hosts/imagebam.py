@@ -44,7 +44,7 @@ class ImageBam(BaseImageHost):
 
         # If we didn't get redirected, something went wrong
         if not response.history:
-            soup = BeautifulSoup(response.text)
+            soup = BeautifulSoup(response.text, "html.parser")
             error_message = soup.find('div', class_='box_error')
             if error_message:
                 logging.error(error_message.string.strip())

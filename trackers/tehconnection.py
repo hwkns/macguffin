@@ -124,7 +124,7 @@ class TehConnection(BaseTracker):
 
         # If we didn't get redirected, something went wrong
         if not response.history:
-            soup = BeautifulSoup(response.text)
+            soup = BeautifulSoup(response.text, "html.parser")
             error_message = soup.find('span', class_='warning')
             if error_message:
                 logging.error(error_message.string.strip())
@@ -323,7 +323,7 @@ class TehConnection(BaseTracker):
             if not response.history:
 
                 # Log any errors displayed by the upload form
-                soup = BeautifulSoup(response.text)
+                soup = BeautifulSoup(response.text, "html.parser")
                 error_elements = soup.find_all('p', style='color: red;text-align:center;')
                 for error in error_elements:
                     logging.error(error.string.strip())
