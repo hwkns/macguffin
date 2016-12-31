@@ -72,7 +72,7 @@ def check_predb(release_name):
     try:
         response = requests.get('http://predb.me/', params=params)
         response.raise_for_status()
-        soup = BeautifulSoup(response.text)
+        soup = BeautifulSoup(response.text, "html.parser")
         matches = set(link.text.strip() for link in soup.find_all('a', class_='p-title'))
         return release_name in matches
     except Exception as e:

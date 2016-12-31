@@ -213,7 +213,7 @@ class Upload(object):
         }
         response = requests.get('http://www.imdb.com/find', params=params)
         response.raise_for_status()
-        dom = BeautifulSoup(response.text)
+        dom = BeautifulSoup(response.text, "html.parser")
         first_result = dom.find('tr', attrs={'class': 'findResult'})
         if first_result is not None:
             imdb_link = first_result.a.get('href').strip()
