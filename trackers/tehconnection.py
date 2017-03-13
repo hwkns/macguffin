@@ -98,7 +98,7 @@ class TehConnection(BaseTracker):
             raise TrackerError('You must specify your TC username, password, and torrent passkey in config.py')
 
         self.base_url = 'https://tehconnection.eu/'
-        self.announce_url = 'http://tehconnection.eu:2790/{passkey}/announce'.format(passkey=config.TC_PASSKEY)
+        self.announce_url = 'http://tracker.tehconnection.eu:2790/{passkey}/announce'.format(passkey=config.TC_PASSKEY)
 
     def login(self):
         """
