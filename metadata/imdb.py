@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from __future__ import print_function, unicode_literals, division, absolute_import
 import re
 import sys
@@ -109,7 +111,7 @@ class IMDb(object):
         # Get description
         if self.description is None:
             description_div = dom.find(class_='summary_text', itemprop='description')
-            if description_div is not None:
+            if description_div is not None and description_div.string is not None:
                 self.description = description_div.string.strip()
 
     def get_plotsummary_metadata(self):
