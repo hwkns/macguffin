@@ -1,4 +1,7 @@
+# -*- coding: utf-8 -*-
+
 from __future__ import print_function, unicode_literals, division, absolute_import
+
 from abc import ABCMeta, abstractmethod
 import logging
 import sys
@@ -27,7 +30,7 @@ class BaseImageHost(object):
     def __repr__(self):
         return self.__class__.__name__
 
-    def request(self, url='', method='GET', params=None, data=None, files=None, verify=None, allow_redirects=True):
+    def request(self, url='', method='GET', params=None, data=None, files=None, verify=True, allow_redirects=True):
         try:
             response = self.session.request(
                 method=method,

@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from __future__ import print_function, unicode_literals, division, absolute_import
 import logging
 
@@ -33,7 +35,7 @@ class TMDB(object):
     def __repr__(self):
         return self.__class__.__name__
 
-    def request(self, path='', method='GET', params=None, data=None, files=None, verify=None, allow_redirects=True):
+    def request(self, path='', method='GET', params=None, data=None, files=None, verify=True, allow_redirects=True):
         url = self.base_url + path
 
         # Make sure we include the API key in each request
