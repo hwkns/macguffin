@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from __future__ import print_function, unicode_literals, division, absolute_import
 from difflib import SequenceMatcher
 import logging
@@ -26,40 +28,37 @@ def normalize_title(s):
     return ''.join(char for char in s.lower() if char not in string.punctuation)
 
 
-def strings_match(s1, s2):
+def strings_match(string_a, string_b):
     """
     Return True if strings are at least 90% similar, False otherwise.
 
-    Arguments s1 and s2 can each be either a single string or a list of possible matching strings.
+    Arguments can each be either a single string or a list of possible matching strings.
     """
 
-    if isinstance(s1, list):
-        for item in s1:
-            if strings_match(item, s2):
-                return True
-        return False
+    if isinstance(string_a, list):
+        return any(
+            strings_match(item, string_b)
+            for item in string_a
+        )
 
-    if isinstance(s2, list):
-        for item in s2:
-            if strings_match(s1, item):
-                return True
-        return False
+    if isinstance(string_b, list):
+        return any(
+            strings_match(string_a, item)
+            for item in string_b
+        )
 
-    matcher = SequenceMatcher(None, s1, s2)
-    if matcher.ratio() >= 0.90:
-        return True
-    else:
-        return False
+    matcher = SequenceMatcher(None, string_a, string_b)
+    return matcher.ratio() >= 0.90
 
 
-def years_match(y1, y2):
+def years_match(year_a, year_b):
     """
-    Returns True if y1 and y2 are no more than 1 year apart, False otherwise.
+    Returns True if year_a and year_b are no more than 1 year apart, False otherwise.
     """
-    for i in (-1, 0, 1):
-        if y1 == str(int(y2) + i):
-            return True
-    return False
+    return any(
+        year_a == str(int(year_b) + i)
+        for i in (-1, 0, 1)
+    )
 
 
 def check_predb(release_name):
