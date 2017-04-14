@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from __future__ import print_function, unicode_literals, division, absolute_import
 import logging
 import pprint
@@ -204,9 +206,9 @@ class TehConnection(BaseTracker):
             bbcode += '[/spoiler][/center]\n'
 
         if upload.nfo is not None:
-            bbcode += '[spoiler=NFO][size=2][pre]'
+            bbcode += '[spoiler=NFO][pre]'
             bbcode += upload.nfo.text
-            bbcode += '[/pre][/size][/spoiler]\n'
+            bbcode += '[/pre][/spoiler]\n'
 
         return bbcode
 
